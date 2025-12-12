@@ -11,13 +11,18 @@ interface DraggableCarouselProps {
 
 export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
+  const [cardWidth, setCardWidth] = useState(0)
   const carouselRef = useRef<HTMLDivElement>(null)
+  const wrapperRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
 
   useEffect(() => {
     const updateWidth = () => {
       if (carouselRef.current) {
         setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth)
+      }
+      if (wrapperRef.current) {
+        setCardWidth(wrapperRef.current.offsetWidth)
       }
     }
     
@@ -34,7 +39,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }
 
   return (
-    <div className="w-full overflow-visible">
+    <div ref={wrapperRef} className="w-full">
       <motion.div
         ref={carouselRef}
         className="flex cursor-grab gap-6 active:cursor-grabbing select-none"
@@ -54,7 +59,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             <motion.div
               key={index}
               className="flex shrink-0 flex-col overflow-hidden rounded-3xl border border-border p-6 select-none"
-              style={{ width: 'min(100vw - 48px, 572px)' }}
+              style={{ width: cardWidth > 0 ? `${cardWidth}px` : '100%' }}
               onDragStart={(e) => {
                 e.preventDefault()
               }}

@@ -41,8 +41,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className={openRunde.className}>
+    <html lang="en" className="overflow-x-hidden sm:overflow-x-visible">
+      <body className={`${openRunde.className} overflow-x-hidden sm:overflow-x-visible`}>
         <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
