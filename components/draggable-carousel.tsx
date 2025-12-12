@@ -34,33 +34,49 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }
 
   return (
-    <div className="w-full overflow-hidden">
+    <div className="w-full overflow-visible">
       <motion.div
         ref={carouselRef}
-        className="flex cursor-grab gap-6 active:cursor-grabbing"
+        className="flex cursor-grab gap-6 active:cursor-grabbing select-none"
         drag="x"
         dragConstraints={dragConstraints}
         dragElastic={0.1}
         style={{ x }}
         whileDrag={{ cursor: "grabbing" }}
+        onDragStart={(e) => {
+          e.preventDefault()
+        }}
       >
-        {images.map((image, index) => (
-          <motion.div
-            key={index}
-            className="flex shrink-0 flex-col overflow-hidden rounded-3xl border border-border p-6"
-            style={{ width: 'min(100vw - 48px, 572px)' }}
-          >
-            <div className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-[rgba(241,239,238,0.2)] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)]">
-              <Image
-                src={`${imageFolder}/${image}`}
-                alt={`Carousel image ${index + 1}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) calc(100vw - 48px), 572px"
-              />
-            </div>
-          </motion.div>
-        ))}
+        {images.map((image, index) => {
+          // If image path starts with "/", it's a full path, otherwise use imageFolder
+          const imageSrc = image.startsWith("/") ? image : `${imageFolder}/${image}`
+          return (
+            <motion.div
+              key={index}
+              className="flex shrink-0 flex-col overflow-hidden rounded-3xl border border-border p-6 select-none"
+              style={{ width: 'min(100vw - 48px, 572px)' }}
+              onDragStart={(e) => {
+                e.preventDefault()
+              }}
+            >
+              <div 
+                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-[rgba(241,239,238,0.2)] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] select-none"
+                onDragStart={(e) => {
+                  e.preventDefault()
+                }}
+              >
+                <Image
+                  src={imageSrc}
+                  alt={`Carousel image ${index + 1}`}
+                  fill
+                  className="object-cover select-none"
+                  sizes="(max-width: 768px) calc(100vw - 48px), 572px"
+                  draggable={false}
+                />
+              </div>
+            </motion.div>
+          )
+        })}
       </motion.div>
     </div>
   )

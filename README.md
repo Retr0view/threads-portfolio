@@ -44,3 +44,5 @@ This project is configured for deployment on Vercel. Simply connect your reposit
 
 The design is created in Figma and can be fine-tuned using Figma MCP for implementation.
 
+
+

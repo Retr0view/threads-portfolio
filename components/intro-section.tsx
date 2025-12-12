@@ -3,11 +3,12 @@
 import Image from "next/image"
 import Link from "next/link"
 import { useState } from "react"
+import { motion } from "framer-motion"
 
 const socialLinks = [
-  { name: "Twitter", icon: "/icons/twitter.svg", url: "https://twitter.com" },
-  { name: "Telegram", icon: "/icons/Telegram.svg", url: "https://telegram.org" },
-  { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://linkedin.com" },
+  { name: "Twitter", icon: "/icons/twitter.svg", url: "https://x.com/RianTouag" },
+  { name: "Telegram", icon: "/icons/Telegram.svg", url: "https://t.me/Coinlandingpage" },
+  { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
 ]
 
 export function IntroSection() {
@@ -19,7 +20,7 @@ export function IntroSection() {
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)]">
           {!profileError ? (
             <Image
-              src="/profile/profile.jpg"
+              src="/profile/profile picture - rian.jpg"
               alt="Profile picture"
               fill
               className="object-cover"
@@ -61,23 +62,28 @@ export function IntroSection() {
       {/* Social Links */}
       <div className="flex items-center gap-2">
         {socialLinks.map((social) => (
-          <Link
+          <motion.div
             key={social.name}
-            href={social.url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-[#f5f5f5] px-4 transition-opacity hover:opacity-80"
-            aria-label={social.name}
+            whileTap={{ scale: 0.95 }}
+            transition={{ type: "spring", stiffness: 400, damping: 17 }}
           >
-            <img
-              src={social.icon}
-              alt={social.name}
-              className="h-4 w-4"
-            />
-            <span className="text-sm font-medium leading-none text-muted-foreground">
-              {social.name}
-            </span>
-          </Link>
+            <Link
+              href={social.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-[#f5f5f5] px-4 transition-colors"
+              aria-label={social.name}
+            >
+              <img
+                src={social.icon}
+                alt={social.name}
+                className="h-4 w-4"
+              />
+              <span className="text-sm font-medium leading-none text-muted-foreground transition-colors group-hover:text-foreground">
+                {social.name}
+              </span>
+            </Link>
+          </motion.div>
         ))}
       </div>
     </div>

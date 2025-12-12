@@ -29,7 +29,7 @@ export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
                 src={workGroup.logoPath}
                 alt={`${workGroup.company} logo`}
                 fill
-                className="object-contain p-1.5"
+                className="object-cover"
                 sizes="44px"
                 onError={() => setLogoError(true)}
               />
@@ -44,19 +44,17 @@ export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
               {workGroup.name}
             </p>
             <p 
-              className="text-sm font-medium leading-none text-muted-foreground [&_span.underline]:underline [&_span.underline]:text-foreground"
+              className="text-sm font-medium leading-none text-muted-foreground [&_a.underline]:underline [&_a.underline]:text-muted-foreground [&_a.underline]:transition-colors [&_a.underline:hover]:text-foreground"
               dangerouslySetInnerHTML={{ __html: workGroup.description }}
             />
           </div>
         </div>
 
         {/* Draggable Image Carousel */}
-        {workGroup.images.length > 0 && (
-          <DraggableCarousel
-            images={workGroup.images}
-            imageFolder={workGroup.imageFolder}
-          />
-        )}
+        <DraggableCarousel
+          images={workGroup.images.length > 0 ? workGroup.images : Array(3).fill(workGroup.placeholderImage)}
+          imageFolder={workGroup.imageFolder}
+        />
       </div>
     </>
   )
