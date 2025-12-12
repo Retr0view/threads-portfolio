@@ -39,7 +39,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }
 
   return (
-    <div ref={wrapperRef} className="w-full">
+    <div ref={wrapperRef} className="w-full overflow-visible">
       <motion.div
         ref={carouselRef}
         className="flex cursor-grab gap-6 active:cursor-grabbing select-none"
