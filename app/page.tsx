@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-[620px] flex-col px-6 py-32 overflow-x-hidden">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col px-6 py-32">
         <IntroSection />
         <section className="mt-[98px] flex flex-col gap-16 px-0">
           {workGroups.map((workGroup, index) => (
