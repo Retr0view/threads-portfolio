@@ -41,7 +41,7 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 pt-10 pb-32 sm:pt-32">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 sm:px-6 pt-10 pb-32 sm:pt-32">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
           animate={{ opacity: 1, y: 0 }}
