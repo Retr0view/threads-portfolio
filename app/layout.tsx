@@ -44,7 +44,8 @@ export default function RootLayout({
   params?: Promise<Record<string, string | string[]>>
 }>) {
   // Unwrap params if present to prevent enumeration errors
-  // In Next.js 15+, params is a Promise and must be unwrapped
+  // In Next.js 15+, params is a Promise and must be unwrapped unconditionally
+  // Even if we don't use the result, we must unwrap it to prevent React from enumerating the Promise
   if (params) {
     use(params) // Unwrap to prevent React from enumerating the Promise
   }
