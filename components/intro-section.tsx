@@ -15,7 +15,7 @@ const socialLinks = [
 const BIO_UPDATED_DATE = new Date("2025-12-15")
 
 const bioText = {
-  first: "I design products and build apps and websites. I love making things that work the way people expect them to.",
+  first: "Senior product designer with engineering depth. Making things that work the way people expect them to.",
   second: "From concept through launch and beyond, I work with founders and startups. The focus is on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
