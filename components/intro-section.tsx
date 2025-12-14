@@ -16,7 +16,7 @@ const BIO_UPDATED_DATE = new Date("2025-12-15")
 
 const bioText = {
   first: "I design products and build apps and websites. I love making things that work the way people expect them to.",
-  second: "I work with founders and startups from concept through launch and beyond. I focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
+  second: "From concept through launch and beyond, I work with founders and startups. The focus is on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
 export function IntroSection() {
