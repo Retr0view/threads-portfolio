@@ -67,7 +67,7 @@ export function IntroSection() {
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
             Rian Touag
           </p>
-          <p className="text-sm font-medium leading-none text-muted-foreground">
+          <p className="text-sm font-normal leading-none text-muted-foreground">
             {updatedDate}
           </p>
         </div>
