@@ -42,22 +42,60 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 pt-10 pb-32 sm:pt-32">
-        <IntroSection />
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.69, 
+            ease: [0.25, 0.1, 0.25, 1],
+            delay: 0
+          }}
+        >
+          <IntroSection />
+        </motion.div>
         <section className="mt-[98px] flex flex-col gap-8 sm:gap-16 px-[1px]">
           {workGroups.map((workGroup, index) => (
-            <WorkGroup 
-              key={workGroup.id} 
-              workGroup={workGroup} 
-              showDivider={index > 0}
-            />
+            <motion.div
+              key={workGroup.id}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ 
+                duration: 0.69, 
+                ease: [0.25, 0.1, 0.25, 1],
+                delay: 0.1495 + (index * 0.1196)
+              }}
+            >
+              <WorkGroup 
+                workGroup={workGroup} 
+                showDivider={index > 0}
+              />
+            </motion.div>
           ))}
           {/* Final divider */}
-          <div className="flex h-[9px] items-center justify-center py-1">
+          <motion.div
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ 
+              duration: 0.69, 
+              ease: [0.25, 0.1, 0.25, 1],
+              delay: 0.1495 + (workGroups.length * 0.1196)
+            }}
+            className="flex h-[9px] items-center justify-center py-1"
+          >
             <div className="h-px w-full bg-border" />
-          </div>
+          </motion.div>
         </section>
         {/* Back to top button */}
-        <div className="mt-16 flex items-center justify-center">
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ 
+            duration: 0.69, 
+            ease: [0.25, 0.1, 0.25, 1],
+            delay: 0.1495 + (workGroups.length * 0.1196) + 0.07475
+          }}
+          className="mt-16 flex items-center justify-center"
+        >
           <motion.div
             whileTap={{ scale: 0.95 }}
             transition={{ type: "spring", stiffness: 400, damping: 17 }}
@@ -73,7 +111,7 @@ export default function Home() {
               Back to the top
             </Link>
           </motion.div>
-        </div>
+        </motion.div>
       </div>
     </main>
   )
