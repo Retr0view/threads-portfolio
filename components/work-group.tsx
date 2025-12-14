@@ -48,7 +48,7 @@ export function WorkGroup({ workGroup }: WorkGroupProps) {
               {workGroup.name}
             </p>
             <p 
-              className="text-sm font-medium leading-none text-muted-foreground [&_a.underline]:underline [&_a.underline]:text-muted-foreground [&_a.underline]:transition-colors [&_a.underline:hover]:text-foreground"
+              className="text-sm font-normal leading-none text-muted-foreground [&_a.underline]:underline [&_a.underline]:text-muted-foreground [&_a.underline]:transition-colors [&_a.underline:hover]:text-foreground"
               dangerouslySetInnerHTML={{ __html: workGroup.description }}
             />
           </div>

@@ -11,6 +11,14 @@ const socialLinks = [
   { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
 ]
 
+// Bio text
+const BIO_UPDATED_DATE = new Date("2025-12-15")
+
+const bioText = {
+  first: "I design products and build apps and websites. I love making things that work the way people expect them to.",
+  second: "I work with founders and startups from concept through launch and beyond. I focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
+}
+
 export function IntroSection() {
   const [profileError, setProfileError] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
@@ -23,6 +31,15 @@ export function IntroSection() {
     window.addEventListener("resize", checkDesktop)
     return () => window.removeEventListener("resize", checkDesktop)
   }, [])
+
+  const formatDate = (date: Date) => {
+    const day = date.getDate()
+    const month = date.toLocaleDateString("en-US", { month: "short" })
+    const year = date.getFullYear()
+    return `Updated ${day} ${month} ${year}`
+  }
+
+  const updatedDate = formatDate(BIO_UPDATED_DATE)
   return (
     <div className="flex flex-col gap-10 px-3 sm:px-0">
       {/* Profile Header */}
@@ -50,25 +67,15 @@ export function IntroSection() {
             Rian Touag
           </p>
           <p className="text-sm font-medium leading-none text-muted-foreground">
-            Updated 11 Dec 2025
+            {updatedDate}
           </p>
         </div>
       </div>
 
       {/* Bio Text */}
       <div className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
-        <p>
-          I'm a product designer with app & web development experience and a love for thoughtful, user-centered design.
-        </p>
-        <p>
-          From early concept to polished product, I craft digital experiences that feel seamless and quietly delightful, shaping every detail with intention to create experiences that work beautifully and feel just as good to use.
-        </p>
-        <p className="font-semibold">
-          TLDR;
-        </p>
-        <p>
-          I work with founders and startups to create purpose-driven design.
-        </p>
+        <p>{bioText.first}</p>
+        <p>{bioText.second}</p>
       </div>
 
       {/* Social Links */}
