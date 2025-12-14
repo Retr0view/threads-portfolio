@@ -1,26 +1,29 @@
 "use client"
 
-import Image from "next/image"
-import { useState } from "react"
+import { Image } from "@unpic/react/nextjs"
+import { useState, useEffect } from "react"
 import { DraggableCarousel } from "./draggable-carousel"
 import { WorkGroup as WorkGroupType } from "@/lib/work-groups"
 
 interface WorkGroupProps {
   workGroup: WorkGroupType
-  showDivider?: boolean
 }
 
-export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
+export function WorkGroup({ workGroup }: WorkGroupProps) {
   const [logoError, setLogoError] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024)
+    }
+    checkDesktop()
+    window.addEventListener("resize", checkDesktop)
+    return () => window.removeEventListener("resize", checkDesktop)
+  }, [])
 
   return (
-    <>
-      {showDivider && (
-        <div className="flex h-[9px] items-center justify-center py-1">
-          <div className="h-px w-full bg-border" />
-        </div>
-      )}
-      <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center gap-3.5">
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)]">
@@ -28,10 +31,10 @@ export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
               <Image
                 src={workGroup.logoPath}
                 alt={`${workGroup.company} logo`}
-                fill
-                className="object-cover"
-                sizes="44px"
-                quality={100}
+                width={44}
+                height={44}
+                className="object-cover w-full h-full"
+                {...(isDesktop && { unoptimized: true })}
                 onError={() => setLogoError(true)}
               />
             ) : (
@@ -57,7 +60,6 @@ export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
           imageFolder={workGroup.imageFolder}
         />
       </div>
-    </>
   )
 }
 

@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@unpic/react": "^1.0.2",
     "clsx": "^2.1.1",
     "framer-motion": "^11.3.19",
     "lenis": "^1.3.16",

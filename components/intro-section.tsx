@@ -1,8 +1,8 @@
 "use client"
 
-import Image from "next/image"
+import { Image } from "@unpic/react/nextjs"
 import Link from "next/link"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
 
 const socialLinks = [
@@ -13,6 +13,16 @@ const socialLinks = [
 
 export function IntroSection() {
   const [profileError, setProfileError] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+
+  useEffect(() => {
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024)
+    }
+    checkDesktop()
+    window.addEventListener("resize", checkDesktop)
+    return () => window.removeEventListener("resize", checkDesktop)
+  }, [])
   return (
     <div className="flex flex-col gap-10 px-3 sm:px-0">
       {/* Profile Header */}
@@ -22,10 +32,10 @@ export function IntroSection() {
             <Image
               src="/profile/profile picture - rian.jpg"
               alt="Profile picture"
-              fill
-              className="object-cover"
-              sizes="44px"
-              quality={100}
+              width={44}
+              height={44}
+              className="object-cover w-full h-full"
+              {...(isDesktop && { unoptimized: true })}
               priority
               onError={() => setProfileError(true)}
             />

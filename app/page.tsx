@@ -39,6 +39,21 @@ export default function Home() {
     }
   }
 
+  const Divider = ({ delay }: { delay: number }) => (
+    <motion.div
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ 
+        duration: 0.69, 
+        ease: [0.25, 0.1, 0.25, 1],
+        delay
+      }}
+      className="flex h-[9px] items-center justify-center py-1"
+    >
+      <div className="h-px w-full bg-border" />
+    </motion.div>
+  )
+
   return (
     <main className="min-h-screen bg-background overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 sm:px-6 pt-10 pb-32 sm:pt-32">
@@ -54,7 +69,8 @@ export default function Home() {
           <IntroSection />
         </motion.div>
         <section className="mt-[98px] flex flex-col gap-8 sm:gap-16 px-[1px]">
-          {workGroups.map((workGroup, index) => (
+          <Divider delay={0.1495} />
+          {workGroups.flatMap((workGroup, index) => [
             <motion.div
               key={workGroup.id}
               initial={{ opacity: 0, y: 8 }}
@@ -65,25 +81,13 @@ export default function Home() {
                 delay: 0.1495 + (index * 0.1196)
               }}
             >
-              <WorkGroup 
-                workGroup={workGroup} 
-                showDivider={index > 0}
-              />
-            </motion.div>
-          ))}
-          {/* Final divider */}
-          <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ 
-              duration: 0.69, 
-              ease: [0.25, 0.1, 0.25, 1],
-              delay: 0.1495 + (workGroups.length * 0.1196)
-            }}
-            className="flex h-[9px] items-center justify-center py-1"
-          >
-            <div className="h-px w-full bg-border" />
-          </motion.div>
+              <WorkGroup workGroup={workGroup} />
+            </motion.div>,
+            ...(index < workGroups.length - 1 ? [
+              <Divider key={`divider-${workGroup.id}`} delay={0.1495 + (index * 0.1196) + 0.1196} />
+            ] : [])
+          ])}
+          <Divider delay={0.1495 + (workGroups.length * 0.1196)} />
         </section>
         {/* Back to top button */}
         <motion.div

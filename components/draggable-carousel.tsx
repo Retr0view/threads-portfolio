@@ -1,7 +1,7 @@
 "use client"
 
 import { motion, useMotionValue } from "framer-motion"
-import Image from "next/image"
+import { Image } from "@unpic/react/nextjs"
 import { useRef, useState, useEffect } from "react"
 
 interface DraggableCarouselProps {
@@ -12,6 +12,7 @@ interface DraggableCarouselProps {
 export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
+  const [isDesktop, setIsDesktop] = useState(false)
   const carouselRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
@@ -26,9 +27,18 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       }
     }
     
+    const checkDesktop = () => {
+      setIsDesktop(window.innerWidth >= 1024)
+    }
+    
     updateWidth()
+    checkDesktop()
     window.addEventListener("resize", updateWidth)
-    return () => window.removeEventListener("resize", updateWidth)
+    window.addEventListener("resize", checkDesktop)
+    return () => {
+      window.removeEventListener("resize", updateWidth)
+      window.removeEventListener("resize", checkDesktop)
+    }
   }, [images])
 
   const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
@@ -80,10 +90,12 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
                 <Image
                   src={imageSrc}
                   alt={`Carousel image ${index + 1}`}
-                  fill
+                  layout="fullWidth"
+                  aspectRatio={348 / 196}
                   className="object-cover select-none"
-                  sizes="(max-width: 768px) calc(100vw - 48px), 572px"
-                  quality={100}
+                  breakpoints={isDesktop ? undefined : [640, 750, 828, 1080, 1240, 1920]}
+                  {...(isDesktop && { unoptimized: true })}
+                  priority={index === 0}
                   loading={index === 0 ? "eager" : "lazy"}
                   draggable={false}
                 />
