@@ -3,7 +3,7 @@
 import { Image } from "@unpic/react/nextjs"
 import Link from "next/link"
 import { useState, useEffect } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 
 const socialLinks = [
@@ -20,9 +20,41 @@ const bioText = {
   second: "From concept through launch and beyond, I work with founders and startups. The focus is on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
+// Component for word-by-word animation
+function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
+  const shouldReduceMotion = useReducedMotion()
+  const words = text.split(" ")
+
+  if (shouldReduceMotion) {
+    return <span>{text}</span>
+  }
+
+  return (
+    <>
+      {words.map((word, index) => (
+        <motion.span
+          key={`${word}-${index}`}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: 0.3,
+            delay: delay + index * 0.03,
+            ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+          }}
+          style={{ display: "inline-block" }}
+        >
+          {word}
+          {index < words.length - 1 && "\u00A0"}
+        </motion.span>
+      ))}
+    </>
+  )
+}
+
 export function IntroSection() {
   const [profileError, setProfileError] = useState(false)
   const [isDesktop, setIsDesktop] = useState(false)
+  const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
     const checkDesktop = () => {
@@ -40,6 +72,11 @@ export function IntroSection() {
     return `Updated ${day} ${month} ${year}`
   }
 
+  // Calculate when text animation finishes
+  // First paragraph: delay 0.1, ~18 words, last word: 0.1 + 17*0.03 = 0.61, + duration 0.3 = ~0.91s
+  // Second paragraph: delay 0.4, ~40 words, last word: 0.4 + 39*0.03 = 1.57, + duration 0.3 = ~1.87s
+  // Start social links animation after text completes (1.87s) with a small gap (0.1s) = ~2.0s
+  const socialLinksStartDelay = 2.0
   const updatedDate = formatDate(BIO_UPDATED_DATE)
   return (
     <div className="flex flex-col gap-10 px-3 sm:px-0">
@@ -75,17 +112,27 @@ export function IntroSection() {
 
       {/* Bio Text */}
       <div className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
-        <p>{bioText.first}</p>
-        <p>{bioText.second}</p>
+        <p>
+          <AnimatedText text={bioText.first} delay={0.1} />
+        </p>
+        <p>
+          <AnimatedText text={bioText.second} delay={0.4} />
+        </p>
       </div>
 
       {/* Social Links */}
       <div className="flex items-center gap-2">
-        {socialLinks.map((social) => (
+        {socialLinks.map((social, index) => (
           <motion.div
             key={social.name}
+            initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+            animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
             whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            transition={{
+              opacity: { duration: 0.4, delay: socialLinksStartDelay + index * 0.1, ease: [0.215, 0.61, 0.355, 1] },
+              y: { duration: 0.4, delay: socialLinksStartDelay + index * 0.1, ease: [0.215, 0.61, 0.355, 1] },
+              scale: { type: "spring", stiffness: 400, damping: 17 },
+            }}
           >
             <Link
               href={social.url}

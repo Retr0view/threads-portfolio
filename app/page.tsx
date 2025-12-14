@@ -41,16 +41,19 @@ export default function Home() {
 
   const Divider = ({ delay }: { delay: number }) => (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ 
-        duration: 0.69, 
-        ease: [0.25, 0.1, 0.25, 1],
-        delay
-      }}
-      className="flex h-[9px] items-center justify-center py-1"
+      className="flex h-[9px] items-center justify-center py-1 overflow-hidden"
     >
-      <div className="h-px w-full bg-border" />
+      <motion.div
+        initial={{ scaleX: 0, opacity: 0 }}
+        animate={{ scaleX: 1, opacity: 1 }}
+        transition={{ 
+          duration: 0.5, 
+          ease: [0.215, 0.61, 0.355, 1],
+          delay
+        }}
+        style={{ transformOrigin: "left" }}
+        className="h-px w-full bg-border"
+      />
     </motion.div>
   )
 
@@ -69,25 +72,33 @@ export default function Home() {
           <IntroSection />
         </motion.div>
         <section className="mt-[98px] flex flex-col gap-8 sm:gap-16 px-[1px]">
-          <Divider delay={0.1495} />
-          {workGroups.flatMap((workGroup, index) => [
-            <motion.div
-              key={workGroup.id}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.69, 
-                ease: [0.25, 0.1, 0.25, 1],
-                delay: 0.1495 + (index * 0.1196)
-              }}
-            >
-              <WorkGroup workGroup={workGroup} />
-            </motion.div>,
-            ...(index < workGroups.length - 1 ? [
-              <Divider key={`divider-${workGroup.id}`} delay={0.1495 + (index * 0.1196) + 0.1196} />
-            ] : [])
-          ])}
-          <Divider delay={0.1495 + (workGroups.length * 0.1196)} />
+          {/* Social links and work groups start at 2.0s simultaneously */}
+          {/* Work groups stagger with 0.12s between each, duration 0.69s */}
+          {/* Dividers animate after each work group finishes (delay + 0.69s + 0.1s gap) */}
+          <Divider delay={2.0 + 0.69 + 0.1} />
+          {workGroups.flatMap((workGroup, index) => {
+            const workGroupDelay = 2.0 + (index * 0.12)
+            const workGroupFinishTime = workGroupDelay + 0.69
+            const dividerDelay = workGroupFinishTime + 0.1
+            return [
+              <motion.div
+                key={workGroup.id}
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ 
+                  duration: 0.69, 
+                  ease: [0.25, 0.1, 0.25, 1],
+                  delay: workGroupDelay
+                }}
+              >
+                <WorkGroup workGroup={workGroup} />
+              </motion.div>,
+              ...(index < workGroups.length - 1 ? [
+                <Divider key={`divider-${workGroup.id}`} delay={dividerDelay} />
+              ] : [])
+            ]
+          })}
+          <Divider delay={2.0 + ((workGroups.length - 1) * 0.12) + 0.69 + 0.1} />
         </section>
         {/* Back to top button */}
         <motion.div
@@ -96,7 +107,7 @@ export default function Home() {
           transition={{ 
             duration: 0.69, 
             ease: [0.25, 0.1, 0.25, 1],
-            delay: 0.1495 + (workGroups.length * 0.1196) + 0.07475
+            delay: 2.0 + (workGroups.length * 0.12) + 0.12
           }}
           className="mt-16 flex items-center justify-center"
         >
