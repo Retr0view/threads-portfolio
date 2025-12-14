@@ -54,9 +54,9 @@ export const workGroups: WorkGroup[] = [
   },
   {
     id: "highlight",
-    name: "Highlight AI casestudy",
+    name: "Highlight AI",
     company: "Highlight",
-    description: "Design experiment, 2025",
+    description: "Case study, 2025",
     logoPath: "/logos/highlight.png",
     imageFolder: "/images/Highlight",
     images: [

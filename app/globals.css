@@ -50,6 +50,9 @@ html.lenis body {
 }
 
 @layer base {
+  html {
+    box-sizing: border-box;
+  }
   * {
     @apply border-border;
   }

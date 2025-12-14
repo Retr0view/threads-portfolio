@@ -58,16 +58,16 @@ export function IntroSection() {
       {/* Bio Text */}
       <div className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
         <p>
-          Hey, I'm Rian Touag, a product designer with a love for thoughtful, user-centered, and visually crafted experiences.
+          I'm a product designer with app & web development experience and a love for thoughtful, user-centered design.
         </p>
         <p>
-          From early concept to polished product, I craft digital experiences that feel intuitive, seamless and quietly delightful. Every detail, from interaction to typography, gets shaped with intention, creating experiences that work beautifully and feel just as good to use.
+          From early concept to polished product, I craft digital experiences that feel seamless and quietly delightful, shaping every detail with intention to create experiences that work beautifully and feel just as good to use.
         </p>
-        <p className="font-medium">
+        <p className="font-semibold">
           TLDR;
         </p>
         <p>
-          I work with founders and startups to create intuitive, purpose-driven design for users.
+          I work with founders and startups to create purpose-driven design.
         </p>
       </div>
 
