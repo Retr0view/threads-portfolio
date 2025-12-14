@@ -31,6 +31,7 @@ export function WorkGroup({ workGroup, showDivider = true }: WorkGroupProps) {
                 fill
                 className="object-cover"
                 sizes="44px"
+                quality={100}
                 onError={() => setLogoError(true)}
               />
             ) : (

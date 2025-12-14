@@ -42,7 +42,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     <div ref={wrapperRef} className="w-full overflow-visible">
       <motion.div
         ref={carouselRef}
-        className="flex cursor-grab gap-6 active:cursor-grabbing select-none"
+        className="flex cursor-grab gap-3 active:cursor-grabbing select-none"
         drag="x"
         dragConstraints={dragConstraints}
         dragElastic={0.1}
@@ -58,7 +58,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
           return (
             <motion.div
               key={index}
-              className="flex shrink-0 flex-col overflow-hidden rounded-3xl border border-border p-6 select-none"
+              className="flex shrink-0 flex-col overflow-visible h-fit select-none"
               style={{ width: cardWidth > 0 ? `${cardWidth}px` : '100%' }}
               onDragStart={(e) => {
                 e.preventDefault()
@@ -76,6 +76,8 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
                   fill
                   className="object-cover select-none"
                   sizes="(max-width: 768px) calc(100vw - 48px), 572px"
+                  quality={100}
+                  loading={index === 0 ? "eager" : "lazy"}
                   draggable={false}
                 />
               </div>
