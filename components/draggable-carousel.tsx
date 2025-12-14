@@ -45,28 +45,21 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }, [images])
 
   // Handle wheel/trackpad scrolling
-  useEffect(() => {
-    const carousel = carouselRef.current
-    if (!carousel) return
-
-    const handleWheel = (e: WheelEvent) => {
-      if (isDragging.current) return
-      
-      // Check if horizontal scroll (deltaX) or trackpad horizontal gesture
-      if (Math.abs(e.deltaX) > 0 || (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) === 0 && e.shiftKey)) {
-        e.preventDefault()
-        const delta = e.deltaX !== 0 ? e.deltaX : (e.deltaY * -1) // Shift+scroll converts to horizontal
-        const currentX = x.get()
-        const newX = Math.max(-width, Math.min(0, currentX - delta))
-        x.set(newX)
-      }
+  const handleWheel = (e: React.WheelEvent) => {
+    // Stop any ongoing drag momentum when scrolling starts
+    x.stop()
+    
+    // Check if horizontal scroll (deltaX) or trackpad horizontal gesture
+    if (Math.abs(e.deltaX) > 0 || (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) === 0 && e.shiftKey)) {
+      e.preventDefault()
+      const delta = e.deltaX !== 0 ? e.deltaX : (e.deltaY * -1) // Shift+scroll converts to horizontal
+      const currentX = x.get()
+      const newX = Math.max(-width, Math.min(0, currentX - delta))
+      x.set(newX)
     }
+  }
 
-    carousel.addEventListener("wheel", handleWheel, { passive: false })
-    return () => {
-      carousel.removeEventListener("wheel", handleWheel)
-    }
-  }, [x, width])
+
 
   const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
 
@@ -76,21 +69,26 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }
 
   return (
-    <div ref={wrapperRef} className="w-full overflow-visible">
-      <motion.div
+    <motion.div
+      ref={wrapperRef}
+      className="w-full cursor-grab active:cursor-grabbing"
+      drag="x"
+      dragConstraints={dragConstraints}
+      dragElastic={0.1}
+      dragPropagation={false}
+      style={{ x, touchAction: "pan-x" }}
+      whileDrag={{ cursor: "grabbing" }}
+      onWheel={handleWheel}
+      onDragStart={() => {
+        isDragging.current = true
+      }}
+      onDragEnd={() => {
+        isDragging.current = false
+      }}
+    >
+      <div
         ref={carouselRef}
-        className="flex cursor-grab gap-3 sm:gap-6 active:cursor-grabbing select-none"
-        drag="x"
-        dragConstraints={dragConstraints}
-        dragElastic={0.1}
-        style={{ x }}
-        whileDrag={{ cursor: "grabbing" }}
-        onDragStart={() => {
-          isDragging.current = true
-        }}
-        onDragEnd={() => {
-          isDragging.current = false
-        }}
+        className="flex gap-3 sm:gap-6 select-none w-full"
       >
         {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
@@ -99,7 +97,9 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             <motion.div
               key={index}
               className="flex shrink-0 flex-col overflow-visible sm:overflow-hidden rounded-none sm:rounded-3xl border-0 sm:border sm:border-border p-0 sm:p-6 h-fit select-none"
-              style={{ width: cardWidth > 0 ? `${cardWidth}px` : '100%' }}
+              style={{ 
+                width: cardWidth > 0 ? `${cardWidth}px` : '100%'
+              }}
               initial={{ opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ 
@@ -107,15 +107,13 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
                 ease: [0.25, 0.1, 0.25, 1],
                 delay: index * 0.0897
               }}
-              onDragStart={(e) => {
-                e.preventDefault()
+              onPointerDownCapture={(e) => {
+                // Don't stop propagation - allow parent wrapper to handle drag
+                // This ensures drag continues even when pointer moves into gaps
               }}
             >
               <div 
                 className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-[rgba(241,239,238,0.2)] shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] select-none"
-                onDragStart={(e) => {
-                  e.preventDefault()
-                }}
               >
                 <Image
                   src={imageSrc}
@@ -133,8 +131,8 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             </motion.div>
           )
         })}
-      </motion.div>
-    </div>
+      </div>
+    </motion.div>
   )
 }
 
