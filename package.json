@@ -3,6 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "prebuild": "node scripts/get-last-commit-date.js",
+    "predev": "node scripts/get-last-commit-date.js",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",

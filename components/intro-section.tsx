@@ -4,6 +4,7 @@ import { Image } from "@unpic/react/nextjs"
 import Link from "next/link"
 import { useState, useEffect } from "react"
 import { motion } from "framer-motion"
+import lastCommitDateData from "@/lib/last-commit-date.json"
 
 const socialLinks = [
   { name: "Twitter", icon: "/icons/twitter.svg", url: "https://x.com/RianTouag" },
@@ -11,8 +12,8 @@ const socialLinks = [
   { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
 ]
 
-// Bio text
-const BIO_UPDATED_DATE = new Date("2025-12-15")
+// Bio text - date from last git commit
+const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
 
 const bioText = {
   first: "Senior product designer with engineering depth. Making things that work the way people expect them to.",
