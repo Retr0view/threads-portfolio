@@ -16,11 +16,14 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const carouselRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
+  const isDragging = useRef(false)
 
   useEffect(() => {
     const updateWidth = () => {
-      if (carouselRef.current) {
-        setWidth(carouselRef.current.scrollWidth - carouselRef.current.offsetWidth)
+      if (carouselRef.current && wrapperRef.current) {
+        const carouselWidth = carouselRef.current.scrollWidth
+        const wrapperWidth = wrapperRef.current.offsetWidth
+        setWidth(Math.max(0, carouselWidth - wrapperWidth))
       }
       if (wrapperRef.current) {
         setCardWidth(wrapperRef.current.offsetWidth)
@@ -41,6 +44,30 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     }
   }, [images])
 
+  // Handle wheel/trackpad scrolling
+  useEffect(() => {
+    const carousel = carouselRef.current
+    if (!carousel) return
+
+    const handleWheel = (e: WheelEvent) => {
+      if (isDragging.current) return
+      
+      // Check if horizontal scroll (deltaX) or trackpad horizontal gesture
+      if (Math.abs(e.deltaX) > 0 || (Math.abs(e.deltaX) === 0 && Math.abs(e.deltaY) === 0 && e.shiftKey)) {
+        e.preventDefault()
+        const delta = e.deltaX !== 0 ? e.deltaX : (e.deltaY * -1) // Shift+scroll converts to horizontal
+        const currentX = x.get()
+        const newX = Math.max(-width, Math.min(0, currentX - delta))
+        x.set(newX)
+      }
+    }
+
+    carousel.addEventListener("wheel", handleWheel, { passive: false })
+    return () => {
+      carousel.removeEventListener("wheel", handleWheel)
+    }
+  }, [x, width])
+
   const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
 
   // If no images, show placeholder
@@ -58,8 +85,11 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         dragElastic={0.1}
         style={{ x }}
         whileDrag={{ cursor: "grabbing" }}
-        onDragStart={(e) => {
-          e.preventDefault()
+        onDragStart={() => {
+          isDragging.current = true
+        }}
+        onDragEnd={() => {
+          isDragging.current = false
         }}
       >
         {images.map((image, index) => {
