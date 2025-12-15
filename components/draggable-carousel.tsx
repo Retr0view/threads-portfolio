@@ -13,6 +13,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
+  const [isHovering, setIsHovering] = useState(false)
   const carouselRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
@@ -83,9 +84,14 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     // Prevent browser navigation gestures on wheel events (trackpad)
     // Note: This works alongside the React onWheel handler to catch edge cases
     const handleWheelPrevent = (e: WheelEvent) => {
-      // If primarily horizontal scroll, prevent default to avoid browser navigation
-      // Only prevent if it's clearly horizontal (not vertical scrolling)
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
+      // If hovering over carousel, prevent all horizontal scroll gestures
+      // Otherwise, only prevent if it's clearly horizontal (not vertical scrolling)
+      if (isHovering) {
+        // When hovering, prevent any horizontal scroll to avoid browser navigation
+        if (Math.abs(e.deltaX) > 0) {
+          e.preventDefault()
+        }
+      } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
         e.preventDefault()
       }
     }
@@ -112,7 +118,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       wrapper.removeEventListener("gesturechange", handleGestureStart)
       wrapper.removeEventListener("gestureend", handleGestureStart)
     }
-  }, [])
+  }, [isHovering])
 
   // Handle wheel/trackpad scrolling
   const handleWheel = (e: React.WheelEvent) => {
@@ -149,6 +155,8 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain" }}
       whileDrag={{ cursor: "grabbing" }}
       onWheel={handleWheel}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
       onDragStart={() => {
         isDragging.current = true
       }}
@@ -159,6 +167,8 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       <div
         ref={carouselRef}
         className="flex gap-3 sm:gap-6 select-none w-full"
+        onMouseEnter={() => setIsHovering(true)}
+        onMouseLeave={() => setIsHovering(false)}
       >
         {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
