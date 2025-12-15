@@ -17,9 +17,6 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const wrapperRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const isDragging = useRef(false)
-  const touchStartX = useRef<number | null>(null)
-  const touchStartY = useRef<number | null>(null)
-  const isHorizontalScroll = useRef(false)
 
   useEffect(() => {
     const updateWidth = () => {
@@ -47,89 +44,73 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     }
   }, [images])
 
-  // Prevent browser navigation on horizontal swipe/scroll
+  // Prevent browser navigation on horizontal swipe gestures
   useEffect(() => {
-    if (!wrapperRef.current) return
+    const wrapper = wrapperRef.current
+    if (!wrapper) return
 
-    const element = wrapperRef.current
+    let touchStartX = 0
+    let touchStartY = 0
+    let isHorizontalSwipe = false
 
     const handleTouchStart = (e: TouchEvent) => {
-      // Check if touch started within the carousel wrapper (including gaps)
-      if (element.contains(e.target as Node)) {
-        const touch = e.touches[0]
-        touchStartX.current = touch.clientX
-        touchStartY.current = touch.clientY
-        isHorizontalScroll.current = false
-      }
+      touchStartX = e.touches[0].clientX
+      touchStartY = e.touches[0].clientY
+      isHorizontalSwipe = false
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (touchStartX.current === null || touchStartY.current === null) return
+      if (!touchStartX || !touchStartY) return
       
-      // Check if we're still within the carousel area (including gaps)
-      // Use getBoundingClientRect to check if touch is within element bounds
-      const rect = element.getBoundingClientRect()
-      const touch = e.touches[0]
-      const isWithinBounds = 
-        touch.clientX >= rect.left && 
-        touch.clientX <= rect.right &&
-        touch.clientY >= rect.top && 
-        touch.clientY <= rect.bottom
+      const touchCurrentX = e.touches[0].clientX
+      const touchCurrentY = e.touches[0].clientY
+      const diffX = Math.abs(touchCurrentX - touchStartX)
+      const diffY = Math.abs(touchCurrentY - touchStartY)
 
-      // If we started in the carousel and are dragging, continue preventing navigation
-      // even if we're slightly outside bounds (allows for gaps and edge cases)
-      if (!isWithinBounds && !isHorizontalScroll.current && !isDragging.current) return
-
-      const deltaX = Math.abs(touch.clientX - touchStartX.current)
-      const deltaY = Math.abs(touch.clientY - touchStartY.current)
-      
-      // If horizontal movement is greater than vertical, prevent browser navigation
-      if (deltaX > deltaY && deltaX > 10) {
-        isHorizontalScroll.current = true
+      // Determine if this is a horizontal swipe
+      if (diffX > diffY && diffX > 10) {
+        isHorizontalSwipe = true
         e.preventDefault()
       }
     }
 
     const handleTouchEnd = () => {
-      touchStartX.current = null
-      touchStartY.current = null
-      isHorizontalScroll.current = false
+      touchStartX = 0
+      touchStartY = 0
+      isHorizontalSwipe = false
     }
 
-    // Prevent browser swipe navigation on Mac trackpad
-    // This works even when pointer is in gaps because we check element bounds
-    // Note: The React onWheel handler will handle the actual scrolling,
-    // this just prevents browser navigation gestures
-    const handleWheel = (e: WheelEvent) => {
-      // Check if wheel event is within carousel bounds (including gaps)
-      const rect = element.getBoundingClientRect()
-      const isWithinBounds = 
-        e.clientX >= rect.left && 
-        e.clientX <= rect.right &&
-        e.clientY >= rect.top && 
-        e.clientY <= rect.bottom
-      
-      if (!isWithinBounds) return
-      
-      // If horizontal scroll detected, prevent browser navigation
-      // The React handler will also preventDefault for actual scrolling,
-      // but this ensures browser gestures are blocked even in gaps
-      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 0) {
+    // Prevent browser navigation gestures on wheel events (trackpad)
+    // Note: This works alongside the React onWheel handler to catch edge cases
+    const handleWheelPrevent = (e: WheelEvent) => {
+      // If primarily horizontal scroll, prevent default to avoid browser navigation
+      // Only prevent if it's clearly horizontal (not vertical scrolling)
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
         e.preventDefault()
       }
     }
 
-    // Add listeners to prevent browser swipe navigation
-    element.addEventListener('touchstart', handleTouchStart, { passive: true })
-    element.addEventListener('touchmove', handleTouchMove, { passive: false })
-    element.addEventListener('touchend', handleTouchEnd, { passive: true })
-    element.addEventListener('wheel', handleWheel, { passive: false })
+    // Prevent Safari gesture navigation
+    const handleGestureStart = (e: Event) => {
+      e.preventDefault()
+    }
+
+    wrapper.addEventListener("touchstart", handleTouchStart, { passive: false })
+    wrapper.addEventListener("touchmove", handleTouchMove, { passive: false })
+    wrapper.addEventListener("touchend", handleTouchEnd)
+    wrapper.addEventListener("wheel", handleWheelPrevent, { passive: false })
+    wrapper.addEventListener("gesturestart", handleGestureStart)
+    wrapper.addEventListener("gesturechange", handleGestureStart)
+    wrapper.addEventListener("gestureend", handleGestureStart)
 
     return () => {
-      element.removeEventListener('touchstart', handleTouchStart)
-      element.removeEventListener('touchmove', handleTouchMove)
-      element.removeEventListener('touchend', handleTouchEnd)
-      element.removeEventListener('wheel', handleWheel)
+      wrapper.removeEventListener("touchstart", handleTouchStart)
+      wrapper.removeEventListener("touchmove", handleTouchMove)
+      wrapper.removeEventListener("touchend", handleTouchEnd)
+      wrapper.removeEventListener("wheel", handleWheelPrevent)
+      wrapper.removeEventListener("gesturestart", handleGestureStart)
+      wrapper.removeEventListener("gesturechange", handleGestureStart)
+      wrapper.removeEventListener("gestureend", handleGestureStart)
     }
   }, [])
 
@@ -150,7 +131,6 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
 
 
 
-
   const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
 
   // If no images, show placeholder
@@ -166,7 +146,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       dragConstraints={dragConstraints}
       dragElastic={0.1}
       dragPropagation={false}
-      style={{ x, touchAction: "pan-x pan-y pinch-zoom" }}
+      style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain" }}
       whileDrag={{ cursor: "grabbing" }}
       onWheel={handleWheel}
       onDragStart={() => {
@@ -225,4 +205,3 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     </motion.div>
   )
 }
-
