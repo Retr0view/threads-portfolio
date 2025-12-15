@@ -14,15 +14,15 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const [cardWidth, setCardWidth] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
-  const carouselRef = useRef<HTMLDivElement>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
+  const interactionRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const isDragging = useRef(false)
 
   useEffect(() => {
     const updateWidth = () => {
-      if (carouselRef.current && wrapperRef.current) {
-        const carouselWidth = carouselRef.current.scrollWidth
+      if (interactionRef.current && wrapperRef.current) {
+        const carouselWidth = interactionRef.current.scrollWidth
         const wrapperWidth = wrapperRef.current.offsetWidth
         setWidth(Math.max(0, carouselWidth - wrapperWidth))
       }
@@ -47,8 +47,8 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
 
   // Prevent browser navigation on horizontal swipe gestures
   useEffect(() => {
-    const wrapper = wrapperRef.current
-    if (!wrapper) return
+    const interaction = interactionRef.current
+    if (!interaction) return
 
     let touchStartX = 0
     let touchStartY = 0
@@ -101,22 +101,22 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       e.preventDefault()
     }
 
-    wrapper.addEventListener("touchstart", handleTouchStart, { passive: false })
-    wrapper.addEventListener("touchmove", handleTouchMove, { passive: false })
-    wrapper.addEventListener("touchend", handleTouchEnd)
-    wrapper.addEventListener("wheel", handleWheelPrevent, { passive: false })
-    wrapper.addEventListener("gesturestart", handleGestureStart)
-    wrapper.addEventListener("gesturechange", handleGestureStart)
-    wrapper.addEventListener("gestureend", handleGestureStart)
+    interaction.addEventListener("touchstart", handleTouchStart, { passive: false })
+    interaction.addEventListener("touchmove", handleTouchMove, { passive: false })
+    interaction.addEventListener("touchend", handleTouchEnd)
+    interaction.addEventListener("wheel", handleWheelPrevent, { passive: false })
+    interaction.addEventListener("gesturestart", handleGestureStart)
+    interaction.addEventListener("gesturechange", handleGestureStart)
+    interaction.addEventListener("gestureend", handleGestureStart)
 
     return () => {
-      wrapper.removeEventListener("touchstart", handleTouchStart)
-      wrapper.removeEventListener("touchmove", handleTouchMove)
-      wrapper.removeEventListener("touchend", handleTouchEnd)
-      wrapper.removeEventListener("wheel", handleWheelPrevent)
-      wrapper.removeEventListener("gesturestart", handleGestureStart)
-      wrapper.removeEventListener("gesturechange", handleGestureStart)
-      wrapper.removeEventListener("gestureend", handleGestureStart)
+      interaction.removeEventListener("touchstart", handleTouchStart)
+      interaction.removeEventListener("touchmove", handleTouchMove)
+      interaction.removeEventListener("touchend", handleTouchEnd)
+      interaction.removeEventListener("wheel", handleWheelPrevent)
+      interaction.removeEventListener("gesturestart", handleGestureStart)
+      interaction.removeEventListener("gesturechange", handleGestureStart)
+      interaction.removeEventListener("gestureend", handleGestureStart)
     }
   }, [isHovering])
 
@@ -145,32 +145,34 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }
 
   return (
-    <motion.div
+    <div
       ref={wrapperRef}
-      className="w-full cursor-grab active:cursor-grabbing"
-      drag="x"
-      dragConstraints={dragConstraints}
-      dragElastic={0.1}
-      dragPropagation={false}
-      style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain" }}
-      whileDrag={{ cursor: "grabbing" }}
-      onWheel={handleWheel}
-      onMouseEnter={() => setIsHovering(true)}
-      onMouseLeave={() => setIsHovering(false)}
-      onDragStart={() => {
-        isDragging.current = true
-      }}
-      onDragEnd={() => {
-        isDragging.current = false
-      }}
+      className="w-full"
     >
-      <div
-        ref={carouselRef}
-        className="flex gap-3 sm:gap-6 select-none w-full"
+      <motion.div
+        ref={interactionRef}
+        className="flex gap-3 sm:gap-6 cursor-grab active:cursor-grabbing w-fit select-none"
+        drag="x"
+        dragConstraints={dragConstraints}
+        dragElastic={0.1}
+        dragPropagation={false}
+        style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
+        whileDrag={{ cursor: "grabbing" }}
+        onWheel={handleWheel}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
+        onPointerDown={(e) => {
+          // Ensure pointer events are captured even in gap areas
+          e.stopPropagation()
+        }}
+        onDragStart={() => {
+          isDragging.current = true
+        }}
+        onDragEnd={() => {
+          isDragging.current = false
+        }}
       >
-        {images.map((image, index) => {
+          {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
           const imageSrc = image.startsWith("/") ? image : `${imageFolder}/${image}`
           return (
@@ -187,6 +189,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
                 ease: [0.25, 0.1, 0.25, 1],
                 delay: index * 0.0897
               }}
+              drag={false}
               onPointerDownCapture={(e) => {
                 // Don't stop propagation - allow parent wrapper to handle drag
                 // This ensures drag continues even when pointer moves into gaps
@@ -211,7 +214,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             </motion.div>
           )
         })}
-      </div>
-    </motion.div>
+      </motion.div>
+    </div>
   )
 }
