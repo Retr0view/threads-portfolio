@@ -27,7 +27,9 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         setWidth(Math.max(0, carouselWidth - wrapperWidth))
       }
       if (wrapperRef.current) {
-        setCardWidth(wrapperRef.current.offsetWidth)
+        const isMobile = window.innerWidth < 1024
+        const baseWidth = wrapperRef.current.offsetWidth
+        setCardWidth(isMobile ? baseWidth * 0.9 : baseWidth)
       }
     }
     
