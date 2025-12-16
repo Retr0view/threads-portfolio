@@ -138,15 +138,15 @@ export function IntroSection() {
               href={social.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-muted px-4 transition-colors"
+              className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-muted px-4 text-muted-foreground transition-colors hover:text-foreground before:absolute before:inset-0 before:rounded-[22px] before:bg-foreground/[0.03] before:opacity-0 before:transition-opacity hover:before:opacity-100"
               aria-label={social.name}
             >
-              <img
-                src={social.icon}
-                alt={social.name}
-                className="h-4 w-4"
+              <span
+                className="relative z-10 h-4 w-4 icon-current-color"
+                style={{ WebkitMaskImage: `url(${social.icon})`, maskImage: `url(${social.icon})` }}
+                aria-hidden="true"
               />
-              <span className="text-sm font-medium leading-none text-muted-foreground transition-colors group-hover:text-foreground">
+              <span className="relative z-10 text-sm font-medium leading-none">
                 {social.name}
               </span>
             </Link>

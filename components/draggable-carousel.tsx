@@ -180,7 +180,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
           return (
             <motion.div
               key={index}
-              className="flex shrink-0 flex-col overflow-visible sm:overflow-hidden rounded-none sm:rounded-3xl border-0 sm:border sm:border-border p-0 sm:p-6 h-fit select-none"
+              className="flex shrink-0 flex-col overflow-visible rounded-none border-0 p-0 h-fit select-none"
               style={{ 
                 width: cardWidth > 0 ? `${cardWidth}px` : '100%'
               }}
@@ -198,7 +198,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
               }}
             >
               <div 
-                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border/20 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
+                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
               >
                 <Image
                   src={imageSrc}
