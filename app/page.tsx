@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { motion, useMotionValue } from "framer-motion"
-import { useEffect } from "react"
+import { motion, useMotionValue, animate } from "framer-motion"
+import { useEffect, useRef } from "react"
 import { IntroSection } from "@/components/intro-section"
 import { WorkGroup } from "@/components/work-group"
 import { workGroups } from "@/lib/work-groups"
@@ -11,6 +11,8 @@ import { useLenis } from "@/components/smooth-scroll"
 export default function Home() {
   const scrollY = useMotionValue(0)
   const { lenis } = useLenis()
+  const isAnimatingRef = useRef(false)
+  const mainRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
     if (!lenis) return
@@ -18,9 +20,11 @@ export default function Home() {
     // Set initial scroll position
     scrollY.set(lenis.scroll)
 
-    // Update scrollY when Lenis scrolls
+    // Update scrollY when Lenis scrolls (but not during our custom animation)
     const handleScroll = ({ scroll }: { scroll: number }) => {
-      scrollY.set(scroll)
+      if (!isAnimatingRef.current) {
+        scrollY.set(scroll)
+      }
     }
 
     lenis.on("scroll", handleScroll)
@@ -31,10 +35,52 @@ export default function Home() {
   }, [lenis, scrollY])
 
   const scrollToTop = () => {
-    if (lenis) {
-      lenis.scrollTo(0, {
-        duration: 0.6,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+    if (lenis && !isAnimatingRef.current && mainRef.current) {
+      isAnimatingRef.current = true
+      const currentScroll = lenis.scroll
+      const overshootAmount = 100 // pixels to overshoot
+      
+      // Temporarily extend the page at both top and bottom to allow overshoot
+      mainRef.current.style.paddingTop = `${overshootAmount}px`
+      mainRef.current.style.paddingBottom = `${overshootAmount}px`
+      // Force Lenis to recalculate scroll limits
+      lenis.resize()
+      
+      // Adjust scroll position to account for the top padding
+      const adjustedScroll = currentScroll + overshootAmount
+      lenis.scrollTo(adjustedScroll, { immediate: true })
+      scrollY.set(adjustedScroll)
+      
+      // First, animate to overshoot position (go down) - fast ease-out
+      animate(scrollY, adjustedScroll + overshootAmount, {
+        duration: 0.2,
+        ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+        onUpdate: (latest) => {
+          lenis.scrollTo(latest, { immediate: true })
+        },
+      }).then(() => {
+        // Then spring to top (accounting for top padding) - less bouncy spring
+        animate(scrollY, overshootAmount, {
+          type: "spring",
+          stiffness: 400,
+          damping: 30,
+          onUpdate: (latest) => {
+            lenis.scrollTo(latest, { immediate: true })
+          },
+          onComplete: () => {
+            // Scroll to actual top (0) without animation
+            lenis.scrollTo(0, { immediate: true })
+            scrollY.set(0)
+            // Remove the extensions
+            if (mainRef.current) {
+              mainRef.current.style.paddingTop = ""
+              mainRef.current.style.paddingBottom = ""
+              lenis.resize()
+            }
+            // Re-enable scroll listener updates
+            isAnimatingRef.current = false
+          },
+        })
       })
     }
   }
@@ -58,7 +104,7 @@ export default function Home() {
   )
 
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 sm:px-6 pt-10 pb-32 sm:pt-32">
         <motion.div
           initial={{ opacity: 0, y: 8 }}
