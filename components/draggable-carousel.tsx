@@ -198,7 +198,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
               }}
             >
               <div 
-                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border/20 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.1),0px_4px_6px_-4px_rgba(0,0,0,0.1)] dark:shadow-none select-none"
+                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border/20 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
               >
                 <Image
                   src={imageSrc}

@@ -26,7 +26,7 @@ export function WorkGroup({ workGroup }: WorkGroupProps) {
     <div className="flex flex-col gap-4">
         {/* Header */}
         <div className="flex items-center gap-3.5">
-          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] dark:shadow-none">
+          <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] dark:shadow-none">
             {!logoError && workGroup.logoPath ? (
               <Image
                 src={workGroup.logoPath}
