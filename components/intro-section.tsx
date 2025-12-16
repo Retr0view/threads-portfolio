@@ -16,7 +16,7 @@ const socialLinks = [
 const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
 
 const bioText = {
-  first: "Senior product designer with engineering depth. Making things that work the way people expect them to.",
+  first: "Senior product designer with an engineer's eye. Making things that work the way people expect them to.",
   second: "From concept through launch and beyond, I work with founders and startups. The focus is on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
@@ -82,7 +82,7 @@ export function IntroSection() {
     <div className="flex flex-col gap-10 px-3 sm:px-0">
       {/* Profile Header */}
       <div className="flex items-center gap-3.5">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)]">
+        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.1)] dark:shadow-none">
           {!profileError ? (
             <Image
               src="/profile/profile picture - rian.jpg"
@@ -138,7 +138,7 @@ export function IntroSection() {
               href={social.url}
               target="_blank"
               rel="noopener noreferrer"
-              className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-[#f5f5f5] px-4 transition-colors"
+              className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-muted px-4 transition-colors"
               aria-label={social.name}
             >
               <img

@@ -2,6 +2,7 @@ import type { Metadata } from "next"
 import localFont from "next/font/local"
 import "./globals.css"
 import { SmoothScroll } from "@/components/smooth-scroll"
+import { ThemeProvider } from "@/components/theme-provider"
 import { use } from "react"
 
 const openRunde = localFont({
@@ -50,9 +51,16 @@ export default function RootLayout({
     use(params) // Unwrap to prevent React from enumerating the Promise
   }
   return (
-    <html lang="en" className="overflow-x-hidden">
+    <html lang="en" className="overflow-x-hidden" suppressHydrationWarning>
       <body className={`${openRunde.className} overflow-x-hidden`}>
-        <SmoothScroll>{children}</SmoothScroll>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <SmoothScroll>{children}</SmoothScroll>
+        </ThemeProvider>
       </body>
     </html>
   )

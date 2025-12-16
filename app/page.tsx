@@ -1,7 +1,7 @@
 "use client"
 
 import Link from "next/link"
-import { motion, useMotionValue, animate } from "framer-motion"
+import { motion, useMotionValue, animate, useReducedMotion } from "framer-motion"
 import { useEffect, useRef } from "react"
 import { IntroSection } from "@/components/intro-section"
 import { WorkGroup } from "@/components/work-group"
@@ -13,6 +13,7 @@ export default function Home() {
   const { lenis } = useLenis()
   const isAnimatingRef = useRef(false)
   const mainRef = useRef<HTMLElement>(null)
+  const shouldReduceMotion = useReducedMotion()
 
   useEffect(() => {
     if (!lenis) return
@@ -90,10 +91,10 @@ export default function Home() {
       className="flex h-[9px] items-center justify-center py-1 overflow-hidden"
     >
       <motion.div
-        initial={{ scaleX: 0, opacity: 0 }}
-        animate={{ scaleX: 1, opacity: 1 }}
+        initial={shouldReduceMotion ? false : { scaleX: 0, opacity: 0 }}
+        animate={shouldReduceMotion ? {} : { scaleX: 1, opacity: 1 }}
         transition={{ 
-          duration: 0.5, 
+          duration: 0.3, 
           ease: [0.215, 0.61, 0.355, 1],
           delay
         }}
@@ -107,11 +108,11 @@ export default function Home() {
     <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 sm:px-6 pt-10 pb-32 sm:pt-32">
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
           transition={{ 
-            duration: 0.69, 
-            ease: [0.25, 0.1, 0.25, 1],
+            duration: 0.3, 
+            ease: [0.645, 0.045, 0.355, 1],
             delay: 0
           }}
         >
@@ -119,21 +120,21 @@ export default function Home() {
         </motion.div>
         <section className="mt-[98px] flex flex-col gap-8 sm:gap-16 px-[1px]">
           {/* Social links and work groups start at 2.0s simultaneously */}
-          {/* Work groups stagger with 0.12s between each, duration 0.69s */}
-          {/* Dividers animate after each work group finishes (delay + 0.69s + 0.1s gap) */}
-          <Divider delay={2.0 + 0.69 + 0.1} />
+          {/* Work groups stagger with 0.12s between each, duration 0.3s */}
+          {/* Dividers animate after each work group finishes (delay + 0.3s + 0.1s gap) */}
+          <Divider delay={2.0 + 0.3 + 0.1} />
           {workGroups.flatMap((workGroup, index) => {
             const workGroupDelay = 2.0 + (index * 0.12)
-            const workGroupFinishTime = workGroupDelay + 0.69
+            const workGroupFinishTime = workGroupDelay + 0.3
             const dividerDelay = workGroupFinishTime + 0.1
             return [
               <motion.div
                 key={workGroup.id}
-                initial={{ opacity: 0, y: 8 }}
-                animate={{ opacity: 1, y: 0 }}
+                initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+                animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
                 transition={{ 
-                  duration: 0.69, 
-                  ease: [0.25, 0.1, 0.25, 1],
+                  duration: 0.3, 
+                  ease: [0.645, 0.045, 0.355, 1],
                   delay: workGroupDelay
                 }}
               >
@@ -144,15 +145,15 @@ export default function Home() {
               ] : [])
             ]
           })}
-          <Divider delay={2.0 + ((workGroups.length - 1) * 0.12) + 0.69 + 0.1} />
+          <Divider delay={2.0 + ((workGroups.length - 1) * 0.12) + 0.3 + 0.1} />
         </section>
         {/* Back to top button */}
         <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
+          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
+          animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
           transition={{ 
-            duration: 0.69, 
-            ease: [0.25, 0.1, 0.25, 1],
+            duration: 0.3, 
+            ease: [0.645, 0.045, 0.355, 1],
             delay: 2.0 + (workGroups.length * 0.12) + 0.12
           }}
           className="mt-16 flex items-center justify-center"
@@ -167,7 +168,7 @@ export default function Home() {
                 e.preventDefault()
                 scrollToTop()
               }}
-              className="flex h-9 items-center justify-center rounded-[22px] bg-[#f5f5f5] px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              className="flex h-9 items-center justify-center rounded-[22px] bg-muted px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
             >
               Back to the top
             </Link>
