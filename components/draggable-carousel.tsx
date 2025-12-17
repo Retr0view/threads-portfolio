@@ -19,13 +19,9 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const x = useMotionValue(0)
   const isDragging = useRef(false)
 
+  // Update card width based on viewport
   useEffect(() => {
-    const updateWidth = () => {
-      if (interactionRef.current && wrapperRef.current) {
-        const carouselWidth = interactionRef.current.scrollWidth
-        const wrapperWidth = wrapperRef.current.offsetWidth
-        setWidth(Math.max(0, carouselWidth - wrapperWidth))
-      }
+    const updateCardWidth = () => {
       if (wrapperRef.current) {
         const isMobile = window.innerWidth < 620
         const baseWidth = wrapperRef.current.offsetWidth
@@ -37,13 +33,39 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       setIsDesktop(window.innerWidth >= 620)
     }
     
-    updateWidth()
+    updateCardWidth()
     checkDesktop()
-    window.addEventListener("resize", updateWidth)
+    window.addEventListener("resize", updateCardWidth)
     window.addEventListener("resize", checkDesktop)
     return () => {
-      window.removeEventListener("resize", updateWidth)
+      window.removeEventListener("resize", updateCardWidth)
       window.removeEventListener("resize", checkDesktop)
+    }
+  }, [images])
+
+  // Calculate drag constraints using ResizeObserver to react to actual dimension changes
+  useEffect(() => {
+    if (!interactionRef.current || !wrapperRef.current) return
+
+    const interaction = interactionRef.current
+    const wrapper = wrapperRef.current
+
+    const updateWidth = () => {
+      const carouselWidth = interaction.scrollWidth
+      const wrapperWidth = wrapper.offsetWidth
+      setWidth(Math.max(0, carouselWidth - wrapperWidth))
+    }
+
+    // Use ResizeObserver to recalculate when content dimensions change
+    const resizeObserver = new ResizeObserver(updateWidth)
+    resizeObserver.observe(interaction)
+
+    // Also update on window resize
+    window.addEventListener("resize", updateWidth)
+
+    return () => {
+      resizeObserver.disconnect()
+      window.removeEventListener("resize", updateWidth)
     }
   }, [images])
 
