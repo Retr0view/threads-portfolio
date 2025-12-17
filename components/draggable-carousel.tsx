@@ -1,8 +1,16 @@
 "use client"
 
-import { motion, useMotionValue } from "framer-motion"
+import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import { Image } from "@unpic/react/nextjs"
 import { useRef, useState, useEffect } from "react"
+
+// Constants
+const MOBILE_BREAKPOINT = 620
+const MOBILE_CARD_WIDTH_RATIO = 0.9
+const ANIMATION_DURATION = 0.3
+const STAGGER_DELAY = 0.05
+const DRAG_BOUNCE_STIFFNESS = 600
+const DRAG_BOUNCE_DAMPING = 30
 
 interface DraggableCarouselProps {
   images: string[]
@@ -17,29 +25,23 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const wrapperRef = useRef<HTMLDivElement>(null)
   const interactionRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
-  const isDragging = useRef(false)
+  const prefersReducedMotion = useReducedMotion()
 
-  // Update card width based on viewport
+  // Update card width and desktop state based on viewport
   useEffect(() => {
-    const updateCardWidth = () => {
+    const handleResize = () => {
       if (wrapperRef.current) {
-        const isMobile = window.innerWidth < 620
+        const isMobile = window.innerWidth < MOBILE_BREAKPOINT
         const baseWidth = wrapperRef.current.offsetWidth
-        setCardWidth(isMobile ? baseWidth * 0.9 : baseWidth)
+        setCardWidth(isMobile ? baseWidth * MOBILE_CARD_WIDTH_RATIO : baseWidth)
+        setIsDesktop(window.innerWidth >= MOBILE_BREAKPOINT)
       }
     }
     
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 620)
-    }
-    
-    updateCardWidth()
-    checkDesktop()
-    window.addEventListener("resize", updateCardWidth)
-    window.addEventListener("resize", checkDesktop)
+    handleResize()
+    window.addEventListener("resize", handleResize)
     return () => {
-      window.removeEventListener("resize", updateCardWidth)
-      window.removeEventListener("resize", checkDesktop)
+      window.removeEventListener("resize", handleResize)
     }
   }, [images])
 
@@ -159,8 +161,6 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     }
   }
 
-
-
   const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
 
   // If no images, show placeholder
@@ -180,6 +180,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         dragConstraints={dragConstraints}
         dragElastic={0.1}
         dragPropagation={false}
+        dragTransition={{ bounceStiffness: DRAG_BOUNCE_STIFFNESS, bounceDamping: DRAG_BOUNCE_DAMPING }}
         style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
         whileDrag={{ cursor: "grabbing" }}
         onWheel={handleWheel}
@@ -189,35 +190,25 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
           // Ensure pointer events are captured even in gap areas
           e.stopPropagation()
         }}
-        onDragStart={() => {
-          isDragging.current = true
-        }}
-        onDragEnd={() => {
-          isDragging.current = false
-        }}
       >
           {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
           const imageSrc = image.startsWith("/") ? image : `${imageFolder}/${image}`
           return (
             <motion.div
-              key={index}
+              key={imageSrc}
               className="flex shrink-0 flex-col overflow-visible rounded-none border-0 p-0 h-fit select-none"
               style={{ 
                 width: cardWidth > 0 ? `${cardWidth}px` : '100%'
               }}
-              initial={{ opacity: 0, y: 8 }}
+              initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ 
-                duration: 0.69, 
+              transition={prefersReducedMotion ? { duration: 0 } : { 
+                duration: ANIMATION_DURATION, 
                 ease: [0.25, 0.1, 0.25, 1],
-                delay: index * 0.0897
+                delay: index * STAGGER_DELAY
               }}
               drag={false}
-              onPointerDownCapture={(e) => {
-                // Don't stop propagation - allow parent wrapper to handle drag
-                // This ensures drag continues even when pointer moves into gaps
-              }}
             >
               <div 
                 className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
