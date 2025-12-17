@@ -17,8 +17,28 @@ const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
 
 const bioText = {
   first: "Senior product designer with an engineer's eye. Making things that work the way people expect them to.",
-  second: "From concept through launch and beyond, I work with founders and startups. The focus is on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
+  second: "From concept through launch and beyond, I work with founders and startups. To focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
+
+// Animation timing constants
+const WORD_STAGGER = 0.03 // delay between each word
+const WORD_DURATION = 0.3 // duration of each word's animation
+const PARAGRAPH_GAP = 0.15 // tiny delay between paragraphs
+
+// Calculate when a paragraph animation ends
+const getAnimationEndTime = (text: string, startDelay: number) => {
+  const wordCount = text.split(" ").length
+  return startDelay + (wordCount - 1) * WORD_STAGGER + WORD_DURATION
+}
+
+// Paragraph timing (starts after avatar/name section animation completes ~0.3s)
+const FIRST_PARAGRAPH_START = 0.4
+const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
+const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + PARAGRAPH_GAP
+const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
+
+// Export for use in page.tsx (work groups start after bio text completes)
+export const BIO_ANIMATION_END = SECOND_PARAGRAPH_END + 0.1
 
 // Component for word-by-word animation
 function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
@@ -37,8 +57,8 @@ function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            duration: 0.3,
-            delay: delay + index * 0.03,
+            duration: WORD_DURATION,
+            delay: delay + index * WORD_STAGGER,
             ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
           }}
           style={{ display: "inline-block" }}
@@ -72,14 +92,11 @@ export function IntroSection() {
     return `Updated ${day} ${month} ${year}`
   }
 
-  // Calculate when text animation finishes
-  // First paragraph: delay 0.1, ~18 words, last word: 0.1 + 17*0.03 = 0.61, + duration 0.3 = ~0.91s
-  // Second paragraph: delay 0.4, ~40 words, last word: 0.4 + 39*0.03 = 1.57, + duration 0.3 = ~1.87s
-  // Start social links animation after text completes (1.87s) with a small gap (0.1s) = ~2.0s
-  const socialLinksStartDelay = 2.0
+  // Start social links animation after second paragraph completes with a small gap
+  const socialLinksStartDelay = SECOND_PARAGRAPH_END + 0.1
   const updatedDate = formatDate(BIO_UPDATED_DATE)
   return (
-    <div className="flex flex-col gap-10 px-3 sm:px-0">
+    <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
       <div className="flex items-center gap-3.5">
         <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] dark:shadow-none">
@@ -113,10 +130,10 @@ export function IntroSection() {
       {/* Bio Text */}
       <div className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
         <p>
-          <AnimatedText text={bioText.first} delay={0.1} />
+          <AnimatedText text={bioText.first} delay={FIRST_PARAGRAPH_START} />
         </p>
         <p>
-          <AnimatedText text={bioText.second} delay={0.4} />
+          <AnimatedText text={bioText.second} delay={SECOND_PARAGRAPH_START} />
         </p>
       </div>
 

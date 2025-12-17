@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { motion, useMotionValue, animate, useReducedMotion } from "framer-motion"
 import { useEffect, useRef } from "react"
-import { IntroSection } from "@/components/intro-section"
+import { IntroSection, BIO_ANIMATION_END } from "@/components/intro-section"
 import { WorkGroup } from "@/components/work-group"
 import { workGroups } from "@/lib/work-groups"
 import { useLenis } from "@/components/smooth-scroll"
@@ -106,7 +106,7 @@ export default function Home() {
 
   return (
     <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 sm:px-6 pt-10 pb-32 sm:pt-32">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-32 xs:pt-32">
         <motion.div
           initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
           animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
@@ -118,13 +118,13 @@ export default function Home() {
         >
           <IntroSection />
         </motion.div>
-        <section className="mt-[98px] flex flex-col gap-8 sm:gap-16 px-[1px]">
-          {/* Social links and work groups start at 2.0s simultaneously */}
+        <section className="mt-[98px] flex flex-col gap-8 xs:gap-16 px-[1px]">
+          {/* Social links and work groups start after bio text animation completes */}
           {/* Work groups stagger with 0.12s between each, duration 0.3s */}
           {/* Dividers animate after each work group finishes (delay + 0.3s + 0.1s gap) */}
-          <Divider delay={2.0 + 0.3 + 0.1} />
+          <Divider delay={BIO_ANIMATION_END + 0.3 + 0.1} />
           {workGroups.flatMap((workGroup, index) => {
-            const workGroupDelay = 2.0 + (index * 0.12)
+            const workGroupDelay = BIO_ANIMATION_END + (index * 0.12)
             const workGroupFinishTime = workGroupDelay + 0.3
             const dividerDelay = workGroupFinishTime + 0.1
             return [
@@ -145,7 +145,7 @@ export default function Home() {
               ] : [])
             ]
           })}
-          <Divider delay={2.0 + ((workGroups.length - 1) * 0.12) + 0.3 + 0.1} />
+          <Divider delay={BIO_ANIMATION_END + ((workGroups.length - 1) * 0.12) + 0.3 + 0.1} />
         </section>
         {/* Back to top button */}
         <motion.div
@@ -154,7 +154,7 @@ export default function Home() {
           transition={{ 
             duration: 0.3, 
             ease: [0.645, 0.045, 0.355, 1],
-            delay: 2.0 + (workGroups.length * 0.12) + 0.12
+            delay: BIO_ANIMATION_END + (workGroups.length * 0.12) + 0.12
           }}
           className="mt-16 flex items-center justify-center"
         >

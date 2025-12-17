@@ -1,0 +1,74 @@
+### UI copy tone (Family-inspired)
+
+Ground rules for microcopy, labels, empty states, errors, and confirmations. This complements `rules/writing.mdc` and the principles in `rules/family-values.mdc`.
+
+## Tone
+
+- **Human and direct**: Say the thing plainly. Use everyday words.
+- **Warm confidence**: Sound sure, not hyped. Avoid fluff.
+- **Action-first**: Lead with verbs and outcomes.
+- **Contextual**: Speak to what the person is doing right now.
+- **Light touch of delight**: A small wink in rare moments; stay invisible in frequent flows.
+
+## Style
+
+- **Use active voice**: "Save backup" not "Backup will be saved."
+- **Prefer short sentences**: One idea per line in UI surfaces.
+- **Use contractions**: "You're set." "You can change this later."
+- **Avoid jargon**: Prefer concrete nouns and verbs.
+- **Numbers > adjectives**: Be specific when space allows.
+
+## Labels and buttons
+
+- Use verbs that describe the next step: "Approve swap," "Show recovery phrase," "Try again."
+- Avoid vague labels: not "Continue," unless the destination is obvious.
+- Keep button text 1–3 words; clarify with a subtitle or helper text if needed.
+
+## Titles and helper text
+
+- Titles name the task in plain words: "Confirm approval," "Back up your wallet."
+- Helper text tells them what happens next or why it matters; keep it under 1–2 short lines.
+- Match the surface: if it's a tray, the copy focuses on a single decision.
+
+## Errors
+
+- Be specific and solvable: say what went wrong and what to do.
+- Use a calm tone: "Can't connect right now. Check your network and try again."
+- If you need the person to wait, set expectations: "This can take up to 30 seconds."
+
+## Success and confirmations
+
+- Confirm with a verb + outcome: "Backup saved."
+- Add brief delight for rare, important wins (e.g., backup complete). Keep common successes minimal.
+
+## Empty states
+
+- Teach with a nudge: one-line guidance + a clear action.
+- Avoid apologizing or filler. Offer a path.
+
+## Frequency vs. delight (copy application)
+
+- Frequent flows: keep copy minimal and neutral; skip jokes.
+- Infrequent or celebratory flows: allow a small flourish (one word or a short phrase) without adding steps.
+
+## Do / Don't
+
+- Do: "Approve swap to continue."
+- Don't: "Please proceed with the approval process to seamlessly continue."
+
+- Do: "Backup saved."
+- Don't: "Your backup has been successfully completed!"
+
+- Do: "Can't connect. Check your network and try again."
+- Don't: "A network connectivity issue has occurred. Please troubleshoot."
+
+## Voice checks (quick pass)
+
+- Is it the fewest words that still clarifies the action?
+- Would a person say this out loud?
+- Does it match the surface's single purpose?
+- Is there unnecessary ceremony in a frequent flow?
+- For rare moments, is there one small delightful touch that doesn't slow the task?
+
+
+

@@ -1,0 +1,133 @@
+### Animation Feeling Rules
+
+Use these rules to make motion feel natural, purposeful, and tasteful. They distill the ideas from the "What makes an animation feel right?" lesson into actionable guidance.
+
+## Principles
+
+- **Natural**: Motion should mirror everyday physics. Avoid surprises in velocity and direction. Linear motion feels robotic; most real movement accelerates and decelerates.
+- **Purposeful**: Animate to support the user's goal, not to decorate. The more often an interaction occurs, the lighter or shorter the animation should be.
+- **Tasteful**: Apply rules with judgment. Build references, compare options, and choose what looks and feels best for the context.
+
+## Easing
+
+- **Avoid linear** for organic UI motion; it feels lifeless.
+- **Use ease-out** for exits/settling transitions; fast start, gentle stop.
+- **Use ease-in-out** for entrances or state changes where both start and end should feel soft.
+- **Consider spring/overshoot** for playful micro-interactions; keep amplitudes and bounciness subtle.
+
+### Easing rules
+
+- Don't use built-in CSS easings unless it's `ease` or `linear`.
+- Use the following easings for their described use case:
+
+  - **`ease-in`** (starts slow, speeds up) — generally avoid; makes UI feel slow.
+    - `ease-in-quad`: `cubic-bezier(.55, .085, .68, .53)`
+    - `ease-in-cubic`: `cubic-bezier(.550, .055, .675, .19)`
+    - `ease-in-quart`: `cubic-bezier(.895, .03, .685, .22)`
+    - `ease-in-quint`: `cubic-bezier(.755, .05, .855, .06)`
+    - `ease-in-expo`: `cubic-bezier(.95, .05, .795, .035)`
+    - `ease-in-circ`: `cubic-bezier(.6, .04, .98, .335)`
+
+  - **`ease-out`** (starts fast, slows down) — best for elements entering or user-initiated interactions.
+    - `ease-out-quad`: `cubic-bezier(.25, .46, .45, .94)`
+    - `ease-out-cubic`: `cubic-bezier(.215, .61, .355, 1)`
+    - `ease-out-quart`: `cubic-bezier(.165, .84, .44, 1)`
+    - `ease-out-quint`: `cubic-bezier(.23, 1, .32, 1)`
+    - `ease-out-expo`: `cubic-bezier(.19, 1, .22, 1)`
+    - `ease-out-circ`: `cubic-bezier(.075, .82, .165, 1)`
+
+  - **`ease-in-out`** (smooth acceleration and deceleration) — ideal for elements moving within the screen.
+    - `ease-in-out-quad`: `cubic-bezier(.455, .03, .515, .955)`
+    - `ease-in-out-cubic`: `cubic-bezier(.645, .045, .355, 1)`
+    - `ease-in-out-quart`: `cubic-bezier(.77, 0, .175, 1)`
+    - `ease-in-out-quint`: `cubic-bezier(.86, 0, .07, 1)`
+    - `ease-in-out-expo`: `cubic-bezier(1, 0, 0, 1)`
+    - `ease-in-out-circ`: `cubic-bezier(.785, .135, .15, .86)`
+
+## Duration
+
+- **Frequent interactions** (hovers, buttons, small toggles): ~120–180 ms.
+- **Component/state changes** (cards, modals, drawers): ~180–240 ms.
+- **Large layout changes** (page transitions): ~220–320 ms.
+- Favor the shortest duration that still reads clearly.
+
+### Keep your animations fast
+
+- Default to `ease-out` for most animations.
+- Avoid durations longer than 1s (unless illustrative). Most should be ~0.2–0.3s.
+
+## What to Animate
+
+- **Prefer** `transform` and `opacity` for smooth, GPU-friendly motion.
+- **Defer** layout-changing properties (e.g., width/height, left/top) unless necessary.
+- **Use subtle blur** to bridge distinct visual states when swapping content; it blends states and reduces perceived jumps.
+
+## Continuity and Clarity
+
+- **Maintain spatial continuity**: Move elements along plausible paths and keep origins consistent.
+- **Blend states**: When content changes, soften the swap with opacity, blur, or crossfade—avoid the "two objects" look.
+- **Avoid surprise**: Don't animate properties that users don't expect to move (e.g., random rotations on a list item).
+
+## Frequency and Friction
+
+- The more often something happens, the less motion it should use.
+- High-frequency interactions should be instant or nearly so; remove staggers from menus or dropdowns that users open repeatedly.
+
+## Accessibility
+
+- **Respect `prefers-reduced-motion`**: Reduce duration, distance, and vigor of motion; prefer fades/crossfades.
+- Ensure motion never blocks task completion; provide immediate alternatives if needed.
+- If `transform` is used, disable or significantly reduce it under `prefers-reduced-motion`.
+
+## Performance
+
+- Aim for **60 fps**; keep animations simple and parallelizable.
+- Batch style reads/writes; avoid forced synchronous layouts.
+- Test on low-end devices and under load.
+- Stick to opacity and transforms when possible; avoid animating layout (`top`, `left`, width/height) for movement.
+- Do not animate drag gestures using CSS variables.
+- Do not animate blur values higher than 20px.
+- Use `will-change` sparingly and only for: `transform`, `opacity`, `clip-path`, `filter`.
+- With Motion/Framer Motion, prefer `transform` rather than `x`/`y` when you need hardware acceleration.
+
+## Hover transitions
+
+- Use built-in CSS `ease` with a duration of `200ms` for simple hovers (`color`, `background-color`, `opacity`).
+- Fall back to the easing rules above for more complex hover transitions.
+- Disable hover transitions on touch devices with `@media (hover: hover) and (pointer: fine)`.
+
+## Origin-aware animations
+
+- Elements should animate from the trigger. For dropdowns/popovers, animate from the button and set `transform-origin` according to trigger position.
+
+## Spring animations
+
+- Default to spring animations when using Framer Motion.
+- Avoid bouncy springs unless working with drag gestures; keep damping high enough to settle quickly.
+
+## Anti-patterns
+
+- Linear easing for organic movement.
+- Over-animating common interactions (hover/menus) and adding unnecessary staggers.
+- Animations that obscure intent or slow users down.
+- Busy motion without a clear cause or destination.
+
+## Practical defaults (drop-in)
+
+- **Easing**: ease-out for transitions; ease-in-out for entrances; gentle spring for micro-interactions.
+- **Duration**: 150 ms small; 200 ms medium; 250–300 ms large.
+- **Properties**: transform + opacity first; avoid layout-affecting properties.
+- **A11y**: implement a `prefers-reduced-motion` path.
+
+## Checklist before shipping
+
+- Does it feel familiar and unsurprising? (Natural)
+- Does it help the user achieve a goal faster or clearer? (Purpose)
+- Is easing appropriate for the motion type? (Easing)
+- Is the duration the shortest that still reads? (Timing)
+- Are we animating transform/opacity when possible? (Performance)
+- Is frequent interaction friction minimized? (Frequency)
+- Does it respect `prefers-reduced-motion`? (Accessibility)
+
+
+

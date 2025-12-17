@@ -1,0 +1,21 @@
+---
+description: when asking about theming for shadcnui or when referencing base ui components
+---
+# Reference Directories
+
+This project has reference directories available for consultation. These are separate from the main project and can be used to understand patterns, implementations, and best practices.
+
+## Available References
+
+### MUI Base UI
+**Location**: `/Users/retro/Cursor projects/base-ui`
+
+Unstyled, accessible UI components from the creators of Radix, Floating UI, and Material UI. Useful for understanding component architecture, accessibility patterns, and unstyled component design.
+
+### Tweak CN
+**Location**: `~/tweakcn-reference`
+
+Open source project that helps people customize the theme of shadcn/ui projects through a web interface. Useful for understanding shadcn component structure, styling approaches, theme customization patterns, and design system integration.
+
+
+

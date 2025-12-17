@@ -27,14 +27,14 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         setWidth(Math.max(0, carouselWidth - wrapperWidth))
       }
       if (wrapperRef.current) {
-        const isMobile = window.innerWidth < 1024
+        const isMobile = window.innerWidth < 620
         const baseWidth = wrapperRef.current.offsetWidth
         setCardWidth(isMobile ? baseWidth * 0.9 : baseWidth)
       }
     }
     
     const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024)
+      setIsDesktop(window.innerWidth >= 620)
     }
     
     updateWidth()
@@ -153,7 +153,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     >
       <motion.div
         ref={interactionRef}
-        className="flex gap-3 sm:gap-6 cursor-grab active:cursor-grabbing w-fit select-none"
+        className="flex gap-3 xs:gap-6 cursor-grab active:cursor-grabbing w-fit select-none"
         drag="x"
         dragConstraints={dragConstraints}
         dragElastic={0.1}

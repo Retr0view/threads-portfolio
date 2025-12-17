@@ -14,13 +14,13 @@ export function Hero() {
       >
         <motion.h1
           variants={fadeIn}
-          className="text-4xl font-bold tracking-tight sm:text-6xl"
+          className="text-4xl font-bold tracking-tight xs:text-6xl"
         >
           Welcome to My Portfolio
         </motion.h1>
         <motion.p
           variants={fadeIn}
-          className="mt-6 text-lg leading-8 text-muted-foreground sm:text-xl"
+          className="mt-6 text-lg leading-8 text-muted-foreground xs:text-xl"
         >
           Building beautiful experiences with modern web technologies
         </motion.p>
@@ -28,6 +28,8 @@ export function Hero() {
     </section>
   )
 }
+
+
 
 
 

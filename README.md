@@ -50,3 +50,5 @@ The design is created in Figma and can be fine-tuned using Figma MCP for impleme
 
 
 
+
+

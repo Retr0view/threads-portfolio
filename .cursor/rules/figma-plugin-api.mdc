@@ -1,0 +1,207 @@
+---
+description: when writing or debugging Figma plugin code, using auto-layout, text nodes, component variants, or Figma MCP tools
+---
+# Figma Plugin API Rules
+
+The Figma API is **sequence-sensitive**. Order: create → configure → parent → finalize.
+
+## Auto-Layout Frames
+
+**Setup order:**
+1. `figma.createFrame()` → 2. `layoutMode` → 3. alignment → 4. sizing modes → 5. padding/spacing → 6. append children → 7. `resize()` (if FIXED)
+
+```typescript
+// Valid alignment values
+primaryAxisAlignItems: 'MIN' | 'MAX' | 'CENTER' | 'SPACE_BETWEEN'  // ❌ NOT 'STRETCH'
+counterAxisAlignItems: 'MIN' | 'MAX' | 'CENTER' | 'BASELINE'       // ❌ NOT 'STRETCH'
+
+// STRETCH is only valid for constraints (absolute positioning)
+backgroundRect.layoutPositioning = 'ABSOLUTE'
+backgroundRect.constraints = { horizontal: 'STRETCH', vertical: 'STRETCH' }  // ✅
+```
+
+**Axis mapping (swaps by direction):**
+| Layout Mode  | Primary Axis | Counter Axis |
+|--------------|--------------|--------------|
+| `VERTICAL`   | Height       | Width        |
+| `HORIZONTAL` | Width        | Height       |
+
+```typescript
+// Fixed width, auto height for VERTICAL layout
+frame.layoutMode = 'VERTICAL'
+frame.primaryAxisSizingMode = 'AUTO'   // Height hugs content
+frame.counterAxisSizingMode = 'FIXED'  // Width fixed
+frame.appendChild(child)
+frame.resize(1028, frame.height)       // Height ignored (AUTO)
+```
+
+## FILL Sizing
+
+`'FILL'` only works on nodes **already parented** to auto-layout frames.
+
+```typescript
+parent.appendChild(child)              // ✅ Parent first
+child.layoutSizingHorizontal = 'FILL'  // Then set FILL
+```
+
+**ComponentNodes:** Use FIXED/HUG before `combineAsVariants()`. Page isn't auto-layout, so FILL fails.
+
+## Text Nodes
+
+Font must be loaded globally → assigned to node → then set characters.
+
+```typescript
+await figma.loadFontAsync({ family: 'Inter', style: 'Regular' })  // 1. Load globally
+const text = figma.createText()
+text.fontName = { family: 'Inter', style: 'Regular' }             // 2. Assign font
+text.characters = 'Hello'                                          // 3. Set text
+```
+
+With text styles: `text.textStyleId = style.id` (then characters).
+
+## Component Variants
+
+**Access:** Use string keys on `variantProperties`, not property IDs.
+
+```typescript
+const vp = component.variantProperties
+const size = vp?.['size']  // ✅ Direct key access
+```
+
+**Find by properties, not names:**
+```typescript
+const btn = buttonSet.children.find(c => 
+  c.type === 'COMPONENT' && 
+  c.variantProperties?.['size'] === 'sm' && 
+  c.variantProperties?.['state'] === 'default'
+)
+```
+
+**Variable modes on instances** (for appearance control):
+```typescript
+instance.setExplicitVariableModeForCollection(collection, modeId)
+```
+Modes affect variable resolution; variant properties select component definitions.
+
+**Prototype interactions:** Set after `combineAsVariants()`.
+
+**Exposing nested instances (surface child props on parent instances):**
+- Identify the specific nested instance to expose (name matters so you expose the right child).
+- Parent the nested instance first, then set any sizing (e.g., FILL).
+- Set `nestedInstance.isExposedInstance = true` to bubble its component properties to the parent instance/component set.
+- Example (from `figma/plugin/components/input.ts`): after appending the `InputGroup` instance into the Input component, we set `inputContentInstance.isExposedInstance = true` so Input surfaces InputGroup properties.
+
+## Overriding Instance Text
+
+```typescript
+const overrideTextContent = (instance: InstanceNode, text: string): void => {
+  const mainComponent = instance.mainComponent
+  if (mainComponent) {
+    try {
+      // For variants, get propDefs from parent ComponentSetNode
+      const parentSet = mainComponent.parent
+      const propSource = parentSet?.type === 'COMPONENT_SET' ? parentSet : mainComponent
+      const propDefs = propSource.componentPropertyDefinitions
+      // TEXT properties have # suffix (e.g., 'Label#0:1')
+      const textPropName = Object.keys(propDefs).find(n => propDefs[n].type === 'TEXT')
+      if (textPropName) { instance.setProperties({ [textPropName]: text }); return }
+    } catch { /* fall through */ }
+  }
+  // Fallback: direct modification
+  const textNode = instance.findOne(n => n.type === 'TEXT') as TextNode | null
+  if (textNode) {
+    if (textNode.fontName === figma.mixed) textNode.fontName = { family: 'Inter', style: 'Regular' }
+    textNode.characters = text
+  }
+}
+```
+
+## Stroke & Resize
+
+- `strokeAlign = 'OUTSIDE'` doesn't add to element dimensions
+- `resize(w, h)` ignores dimension when that axis is `'AUTO'`
+- Add children before `resize()` for accurate dimensions
+
+## Quick Reference
+
+| Issue | Cause | Fix |
+|-------|-------|-----|
+| `FILL can only be set...` | FILL before parenting | Append first, then FILL |
+| `not a function` loadFontAsync | Called on text node | Use `figma.loadFontAsync()` |
+| `Cannot write to node with unloaded font` | Characters before fontName | Set fontName/textStyleId first |
+| Invalid enum for alignment | Using `'STRETCH'` | STRETCH only for constraints |
+| Wrong dimensions after resize | Axis confusion | VERTICAL: primary=height |
+| `setProperties` not working | Wrong property name | TEXT props have `#` suffix |
+| `fontName` comparison fails | Font is mixed | Check for `figma.mixed` |
+| `componentPropertyDefinitions` error | Accessed on variant component | Use parent ComponentSetNode |
+| Focus ring misaligned | OUTSIDE stroke in calculations | Strokes don't add to dimensions |
+
+**Always:**
+- Load fonts with `figma.loadFontAsync()` before text ops
+- Set `layoutMode` before other auto-layout props
+- Search variants by `variantProperties`, not names
+- Use `findOne()`/`findAll()` instead of manual recursion
+
+**Never:**
+- `'STRETCH'` for alignment (only for constraints)
+- FILL on ComponentNodes before combining
+- `resize()` before adding children
+- Deep nesting when flat structures work
+
+## Figma MCP Tools
+
+| Tool | Use | Returns |
+|------|-----|---------|
+| `get_metadata` | ID what's selected, locate code | Node name, ID, children (XML) |
+| `get_design_context` | Implement designs | Full styles, properties, layout |
+| `get_screenshot` | Visual reference | Image |
+
+**When to call `get_design_context`:**
+- ✅ Implementing designs, recreating styles
+- ❌ Just identifying selection, locating code
+
+### Parsing `get_metadata` Response
+
+Returns XML with node structure:
+```xml
+<frame id="33:293" name="InputAddon" x="64" y="64" width="426" height="168">
+  <symbol id="33:245" name="Side=Left, Variant=text, Size=small" ... />
+</frame>
+```
+
+Extract: **node name/ID** from root attributes, **variant properties** from child `name` attrs, **dimensions** from width/height.
+
+**Note:** Response includes an "IMPORTANT: you MUST call get_design_context..." message. This is **conditional** ("if trying to implement the design"). Ignore it when just identifying selections or locating code.
+
+### Presenting Selection Info
+
+Format responses clearly:
+```markdown
+Your selection is **ComponentName** (id: `33:293`), a component set with X variants:
+
+| Property | Values |
+|----------|--------|
+| **Size** | small, default, large |
+| **State** | default, hover, focus |
+
+Key details:
+- Dimensions: 426×168px
+- Contains: 18 variant components
+```
+
+Lead with bold component name and ID, use tables for variant dimensions, offer actionable next steps.
+
+### Development Workflow
+
+Select in Figma → `get_metadata` → find code → modify → `npm run build` → regenerate
+
+| Selection | Code Location |
+|-----------|---------------|
+| Component Set | `figma/plugin/components/{name}.ts` |
+| Variant | `variantConfigs` object |
+| Child Element | `create[Element]()` helpers |
+
+**Critical:** Always build after code changes—user won't see updates until plugin is recompiled.
+
+
+

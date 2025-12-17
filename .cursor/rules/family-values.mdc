@@ -1,0 +1,89 @@
+### Family values: simplicity, fluidity, delight
+
+Use these rules to translate Family's product philosophy into concrete design and interaction decisions.
+
+## Core principles
+
+- **Simplicity**: Show only what matters now; reveal depth gradually.
+- **Fluidity**: Maintain spatial and narrative continuity across every transition.
+- **Delight**: Add small, intentional moments that reward attention without adding friction.
+
+## Simplicity: gradual revelation
+
+- **Progressive disclosure**: Default to minimal UI; reveal options when context makes them relevant.
+- **One thing per surface**: Each step/surface focuses on a single task or message.
+- **Context preservation**: Prefer overlays that maintain sight of origin rather than hard page changes.
+- **Clear labeling**: Every surface has a concise title that sets expectation and anchors the task.
+- **Back/dismiss affordance**: Always provide a clear path to undo, go back, or close.
+- **Height differentiation**: For sequential overlays, vary heights to signal forward progress.
+- **Theming by context**: Match surface theme (light/dark, tone) to its parent context.
+- **Transient vs. persistent**: Use overlays for ephemeral, contextual actions; use full screens for durable destinations.
+
+## Tray system rules (for overlay-style flows)
+
+- **Initiation**: Trays are invoked by explicit user actions (tap, notification, icon) and should originate from their trigger.
+- **Singular purpose**: Each tray handles a single action or piece of content; avoid mixed intents.
+- **Stacking**: Sequence trays one-by-one; ensure each successive tray has a distinct height to clarify state changes.
+- **Navigation**: The leading control dismisses the first tray; subsequent trays use it to navigate backwards.
+- **Continuity**: Animate from the trigger and keep background content visible to preserve orientation.
+
+## Fluidity: seamless transitions
+
+- **Every motion explains a change**: Motions must clarify what changed and where it went; never decorate.
+- **Spatial links**: Transform elements between states rather than swapping abruptly; prefer shared element transitions.
+- **Dimensionality**: Use depth (scale, blur, parallax) sparingly to convey layering without distraction.
+- **Consistent cadence**: Keep timing and easing consistent across similar interactions.
+- **Onboarding sets the tone**: Early flows should demonstrate fluidity clearly; avoid jarring cuts.
+- **Trust-through-smoothness**: Avoid glitchy or inconsistent transitions that erode confidence.
+
+### Motion specifics
+
+- Defer easing, duration, properties, accessibility, and performance details to Animation Feeling Rules.
+
+## Delight: selective emphasis
+
+- **Place delight where novelty is highest**: Rarer actions can carry more flourish; common ones stay subtle.
+- **Surprise, not distraction**: Easter eggs should be opt-in or discoverable without blocking tasks.
+- **Micro-feedback**: Use tactile details (tiny number formatting shifts, gentle ripples) to reward input.
+- **Finish strong**: Celebrate meaningful completions (e.g., backup success) with brief, tasteful effects.
+- **Consistency first**: Keep quality consistent everywhere so delight never highlights uneven spots.
+
+### Delight impact guidelines
+
+- **Frequency vs. intensity**: The less frequent the feature, the more delight it can accommodate.
+- **Never slow the core path**: Delight must never add steps or delay completion.
+- **Recoverability**: Delightful interactions must be reversible or ignorable.
+
+## Decision checklist
+
+- **Simplicity**: Is the surface focused on one thing? Are we revealing only what's relevant now?
+- **Continuity**: Does the transition preserve spatial context and explain where things went?
+- **Clarity**: Is the title, action, and back/dismiss affordance obvious?
+- **Delight**: Is any flourish appropriately scaled to frequency and importance?
+- **Motion specifics**: For easing, timing, properties, accessibility, and performance, follow Animation Feeling Rules.
+
+## When to use trays vs full screens
+
+- **Use trays** when the action is contextual, transient, and benefits from preserving background context (confirmation, warnings, quick setup steps).
+- **Use full screens** when the new place is durable, information-dense, or becomes a working space.
+
+## Examples to emulate
+
+- Contextual approvals that originate from the initiating surface and resolve without losing place.
+- First-use education blended into the surface instead of separate tutorial screens.
+- Gentle celebratory effects after important but infrequent tasks (e.g., confetti on backup complete).
+
+## Anti-patterns
+
+- Dumping all features up-front without context.
+- Identical overlay heights in a sequence, causing ambiguous state progression.
+- Glitchy or abrupt transitions that break orientation.
+- Over-delighting common flows (send, type, navigate) with heavy animations.
+- Delight that blocks, distracts, or cannot be skipped.
+
+---
+
+Source: "Family Values" by Benji (Family iOS wallet philosophy) — see `https://benji.org/family-values`.
+
+
+
