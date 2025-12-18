@@ -1,8 +1,9 @@
 "use client"
 
 import { motion, useMotionValue, useReducedMotion } from "framer-motion"
-import { Image } from "@unpic/react/nextjs"
+import Image from "next/image"
 import { useRef, useState, useEffect } from "react"
+import { ImageLightbox } from "./image-lightbox"
 
 // Constants
 const MOBILE_BREAKPOINT = 620
@@ -22,10 +23,16 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const [cardWidth, setCardWidth] = useState(0)
   const [isDesktop, setIsDesktop] = useState(false)
   const [isHovering, setIsHovering] = useState(false)
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [lightboxIndex, setLightboxIndex] = useState(0)
+  const [clickedImageRect, setClickedImageRect] = useState<DOMRect | null>(null)
   const wrapperRef = useRef<HTMLDivElement>(null)
   const interactionRef = useRef<HTMLDivElement>(null)
   const x = useMotionValue(0)
   const prefersReducedMotion = useReducedMotion()
+  const isDragging = useRef(false)
+  const dragStartTime = useRef(0)
+  const dragStartX = useRef(0)
 
   // Update card width and desktop state based on viewport
   useEffect(() => {
@@ -186,6 +193,27 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         onWheel={handleWheel}
         onMouseEnter={() => setIsHovering(true)}
         onMouseLeave={() => setIsHovering(false)}
+        onDragStart={() => {
+          isDragging.current = true
+          dragStartTime.current = Date.now()
+          dragStartX.current = x.get()
+        }}
+        onDragEnd={() => {
+          const dragDuration = Date.now() - dragStartTime.current
+          const dragDistance = Math.abs(x.get() - dragStartX.current)
+          // Only consider it a drag if it lasted > 100ms or moved significantly (> 5px)
+          if (dragDuration > 100 || dragDistance > 5) {
+            // Reset after a short delay to allow click handler
+            setTimeout(() => {
+              isDragging.current = false
+            }, 100)
+          } else {
+            // Quick tap, reset immediately
+            setTimeout(() => {
+              isDragging.current = false
+            }, 50)
+          }
+        }}
         onPointerDown={(e) => {
           // Ensure pointer events are captured even in gap areas
           e.stopPropagation()
@@ -212,15 +240,25 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             >
               <div 
                 className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
+                onClick={(e) => {
+                  // Only open lightbox on desktop and if not dragging
+                  if (isDesktop && !isDragging.current) {
+                    const rect = e.currentTarget.getBoundingClientRect()
+                    setClickedImageRect(rect)
+                    setLightboxIndex(index)
+                    setLightboxOpen(true)
+                  }
+                }}
+                style={{
+                  cursor: isDesktop ? "pointer" : "default",
+                }}
               >
                 <Image
                   src={imageSrc}
                   alt={`Carousel image ${index + 1}`}
-                  layout="fullWidth"
-                  aspectRatio={348 / 196}
+                  fill
                   className="object-cover select-none"
-                  breakpoints={isDesktop ? undefined : [640, 750, 828, 1080, 1240, 1920]}
-                  {...(isDesktop && { unoptimized: true })}
+                  sizes="(max-width: 620px) 90vw, 620px"
                   priority={index === 0}
                   loading={index === 0 ? "eager" : "lazy"}
                   draggable={false}
@@ -230,6 +268,17 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
           )
         })}
       </motion.div>
+
+      {/* Image Lightbox */}
+      <ImageLightbox
+        isOpen={lightboxOpen}
+        images={images}
+        imageFolder={imageFolder}
+        currentIndex={lightboxIndex}
+        clickedImageRect={clickedImageRect}
+        onClose={() => setLightboxOpen(false)}
+        onNavigate={(index) => setLightboxIndex(index)}
+      />
     </div>
   )
 }

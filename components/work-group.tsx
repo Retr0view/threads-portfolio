@@ -1,6 +1,6 @@
 "use client"
 
-import { Image } from "@unpic/react/nextjs"
+import Image from "next/image"
 import { useState, useEffect } from "react"
 import { DraggableCarousel } from "./draggable-carousel"
 import { WorkGroup as WorkGroupType } from "@/lib/work-groups"
@@ -34,8 +34,8 @@ export function WorkGroup({ workGroup }: WorkGroupProps) {
                 width={44}
                 height={44}
                 className="object-cover w-full h-full"
-                {...(isDesktop && { unoptimized: true })}
                 onError={() => setLogoError(true)}
+                sizes="44px"
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center text-xs font-medium text-foreground">
