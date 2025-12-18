@@ -78,6 +78,22 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     }
   }, [images])
 
+  // Preload all images so lightbox opens without loading delays
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    const urls = new Set(
+      images.map((image) =>
+        image.startsWith("/") ? image : `${imageFolder}/${image}`,
+      ),
+    )
+
+    urls.forEach((src) => {
+      const img = new window.Image()
+      img.src = src
+    })
+  }, [images, imageFolder])
+
   // Prevent browser navigation on horizontal swipe gestures
   useEffect(() => {
     const interaction = interactionRef.current

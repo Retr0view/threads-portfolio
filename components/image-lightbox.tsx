@@ -2,7 +2,7 @@
 
 import { motion, AnimatePresence, useReducedMotion } from "framer-motion"
 import Image from "next/image"
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useState } from "react"
 
 interface ImageLightboxProps {
   isOpen: boolean
@@ -27,6 +27,7 @@ export function ImageLightbox({
 }: ImageLightboxProps) {
   const prefersReducedMotion = useReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
+  const [hoverSide, setHoverSide] = useState<"left" | "right" | null>(null)
 
   // Calculate transform origin from clicked image position
   const getTransformOrigin = () => {
@@ -181,11 +182,12 @@ export function ImageLightbox({
                 height: "fit-content",
               }}
               onClick={(e) => e.stopPropagation()}
+              onMouseLeave={() => setHoverSide(null)}
             >
               {/* Image */}
               <div className="relative rounded-lg overflow-hidden border-[3px] border-border shadow-2xl flex items-center justify-center p-0 box-border">
                 <div
-                  className="relative w-[65vw] max-w-[1200px]"
+                  className="relative w-[75vw] max-w-[1200px]"
                   style={{ aspectRatio: "348 / 196", maxHeight: "100vh" }}
                 >
                   <Image
@@ -193,17 +195,40 @@ export function ImageLightbox({
                     alt={`Lightbox image ${currentIndex + 1}`}
                     fill
                     className="object-contain scale-[1.02]"
-                    sizes="(max-width: 768px) 100vw, 65vw"
+                    sizes="(max-width: 768px) 100vw, 75vw"
                     priority
                   />
+                </div>
+
+                {/* Hover zones for showing controls (no direct navigation click) */}
+                <div className="pointer-events-none absolute inset-0">
+                  {canGoPrev && (
+                    <div
+                      className="pointer-events-auto h-full w-1/2 cursor-default"
+                      onMouseEnter={() => setHoverSide("left")}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {canGoNext && (
+                    <div
+                      className="pointer-events-auto absolute right-0 top-0 h-full w-1/2 cursor-default"
+                      onMouseEnter={() => setHoverSide("right")}
+                      aria-hidden="true"
+                    />
+                  )}
                 </div>
               </div>
 
               {/* Navigation Arrows */}
               {canGoPrev && (
                 <button
+                  type="button"
                   onClick={handlePrev}
-                  className="absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background transition-colors duration-200 ease"
+                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
+                    hoverSide === "left"
+                      ? "opacity-100 pointer-events-auto translate-x-0"
+                      : "opacity-0 pointer-events-none -translate-x-2"
+                  }`}
                   aria-label="Previous image"
                 >
                   <svg
@@ -226,8 +251,13 @@ export function ImageLightbox({
 
               {canGoNext && (
                 <button
+                  type="button"
                   onClick={handleNext}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background transition-colors duration-200 ease"
+                  className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
+                    hoverSide === "right"
+                      ? "opacity-100 pointer-events-auto translate-x-0"
+                      : "opacity-0 pointer-events-none translate-x-2"
+                  }`}
                   aria-label="Next image"
                 >
                   <svg
