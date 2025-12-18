@@ -204,30 +204,55 @@ export function ImageLightbox({
                 <div className="pointer-events-none absolute inset-0">
                   {canGoPrev && (
                     <div
-                      className="pointer-events-auto h-full w-1/2 cursor-default"
+                      className="pointer-events-auto h-full w-1/2 cursor-pointer"
                       onMouseEnter={() => setHoverSide("left")}
+                      onClick={handlePrev}
                       aria-hidden="true"
                     />
                   )}
                   {canGoNext && (
                     <div
-                      className="pointer-events-auto absolute right-0 top-0 h-full w-1/2 cursor-default"
+                      className="pointer-events-auto absolute right-0 top-0 h-full w-1/2 cursor-pointer"
                       onMouseEnter={() => setHoverSide("right")}
+                      onClick={handleNext}
                       aria-hidden="true"
                     />
                   )}
                 </div>
               </div>
 
+              {/* Dot indicators */}
+              {images.length > 1 && (
+                <div className="pointer-events-auto absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                  {images.map((_, index) => {
+                    const isActive = index === currentIndex
+                    return (
+                      <button
+                        key={index}
+                        type="button"
+                        onClick={() => onNavigate(index)}
+                        className={`h-2.5 w-2.5 rounded-full border transition-colors ${
+                          isActive
+                            ? "bg-foreground border-foreground"
+                            : "bg-background/70 border-border hover:bg-foreground/40"
+                        }`}
+                        aria-label={`Go to image ${index + 1}`}
+                        aria-current={isActive ? "true" : undefined}
+                      />
+                    )
+                  })}
+                </div>
+              )}
+
               {/* Navigation Arrows */}
               {canGoPrev && (
                 <button
                   type="button"
                   onClick={handlePrev}
-                  className={`absolute left-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
+                  className={`absolute -left-14 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
                     hoverSide === "left"
                       ? "opacity-100 pointer-events-auto translate-x-0"
-                      : "opacity-0 pointer-events-none -translate-x-2"
+                      : "opacity-0 pointer-events-none translate-x-2"
                   }`}
                   aria-label="Previous image"
                 >
@@ -253,10 +278,10 @@ export function ImageLightbox({
                 <button
                   type="button"
                   onClick={handleNext}
-                  className={`absolute right-4 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
+                  className={`absolute -right-14 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
                     hoverSide === "right"
                       ? "opacity-100 pointer-events-auto translate-x-0"
-                      : "opacity-0 pointer-events-none translate-x-2"
+                      : "opacity-0 pointer-events-none -translate-x-2"
                   }`}
                   aria-label="Next image"
                 >
