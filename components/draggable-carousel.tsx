@@ -298,3 +298,4 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     </div>
   )
 }
+
