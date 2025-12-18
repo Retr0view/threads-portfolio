@@ -223,7 +223,7 @@ export function ImageLightbox({
 
               {/* Dot indicators */}
               {images.length > 1 && (
-                <div className="pointer-events-auto absolute -bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2">
+                <div className="pointer-events-auto absolute top-full left-1/2 -translate-x-1/2 mt-4 flex items-center gap-2">
                   {images.map((_, index) => {
                     const isActive = index === currentIndex
                     return (
@@ -244,11 +244,40 @@ export function ImageLightbox({
                 </div>
               )}
 
+              {/* Extended hover zones to keep controls visible while moving to buttons */}
+              {canGoPrev && (
+                <div
+                  className="pointer-events-auto absolute inset-y-0 -left-24 w-24"
+                  onMouseEnter={() => setHoverSide("left")}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      onClose()
+                    }
+                  }}
+                  aria-hidden="true"
+                />
+              )}
+              {canGoNext && (
+                <div
+                  className="pointer-events-auto absolute inset-y-0 -right-24 w-24"
+                  onMouseEnter={() => setHoverSide("right")}
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      onClose()
+                    }
+                  }}
+                  aria-hidden="true"
+                />
+              )}
+
               {/* Navigation Arrows */}
               {canGoPrev && (
                 <button
                   type="button"
-                  onClick={handlePrev}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handlePrev()
+                  }}
                   className={`absolute -left-14 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
                     hoverSide === "left"
                       ? "opacity-100 pointer-events-auto translate-x-0"
@@ -277,7 +306,10 @@ export function ImageLightbox({
               {canGoNext && (
                 <button
                   type="button"
-                  onClick={handleNext}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleNext()
+                  }}
                   className={`absolute -right-14 top-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-background/80 dark:bg-background/80 backdrop-blur-sm border border-border flex items-center justify-center hover:bg-background active:scale-95 transition-opacity transition-transform duration-200 ease ${
                     hoverSide === "right"
                       ? "opacity-100 pointer-events-auto translate-x-0"
