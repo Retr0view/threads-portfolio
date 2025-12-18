@@ -20,10 +20,10 @@ const bioText = {
   second: "From concept through launch and beyond, I work with founders and startups. To focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
-// Animation timing constants
-const WORD_STAGGER = 0.03 // delay between each word
-const WORD_DURATION = 0.3 // duration of each word's animation
-const PARAGRAPH_GAP = 0.15 // tiny delay between paragraphs
+// Animation timing constants (tuned for a snappier feel)
+const WORD_STAGGER = 0.02 // delay between each word (was 0.03)
+const WORD_DURATION = 0.2 // duration of each word's animation (was 0.3)
+const PARAGRAPH_GAP = 0.12 // tiny delay between paragraphs (was 0.15)
 
 // Calculate when a paragraph animation ends
 const getAnimationEndTime = (text: string, startDelay: number) => {
@@ -32,7 +32,7 @@ const getAnimationEndTime = (text: string, startDelay: number) => {
 }
 
 // Paragraph timing (starts after avatar/name section animation completes ~0.3s)
-const FIRST_PARAGRAPH_START = 0.4
+const FIRST_PARAGRAPH_START = 0.25
 const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
 const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + PARAGRAPH_GAP
 const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
