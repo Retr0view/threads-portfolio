@@ -138,7 +138,7 @@ export function ImageLightbox({
 
   // Memoize image variants
   const imageVariants = useMemo(
-    () => createImageVariants(prefersReducedMotion),
+    () => createImageVariants(prefersReducedMotion ?? false),
     [prefersReducedMotion]
   )
 
@@ -267,7 +267,7 @@ export function ImageLightbox({
               exit="exit"
               className="relative pointer-events-auto flex items-center justify-center"
               style={{
-                transformOrigin: prefersReducedMotion ? "center center" : transformOrigin,
+                transformOrigin: (prefersReducedMotion ?? false) ? "center center" : transformOrigin,
                 maxWidth: "100vw",
                 maxHeight: "100vh",
                 width: "fit-content",
