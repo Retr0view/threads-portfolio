@@ -165,8 +165,20 @@ export function ImageLightbox({
 
   // Reset loading state when image changes
   useEffect(() => {
-    setImageLoaded(false)
     setImageError(false)
+    
+    // Check if image is already cached - if so, show it immediately
+    if (typeof window !== "undefined") {
+      const img = new window.Image()
+      img.src = imageSrc
+      if (img.complete) {
+        setImageLoaded(true)
+      } else {
+        setImageLoaded(false)
+      }
+    } else {
+      setImageLoaded(false)
+    }
   }, [imageSrc])
 
   // Preload adjacent images when lightbox opens or index changes
