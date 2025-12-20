@@ -22,9 +22,9 @@ const bioText = {
 }
 
 // Animation timing constants (tuned for a snappier feel)
-const WORD_STAGGER = 0.008 // delay between each word (was 0.015)
-const WORD_DURATION = 0.12 // duration of each word's animation (was 0.15)
-const PARAGRAPH_GAP = 0.05 // tiny delay between paragraphs (was 0.08)
+const WORD_STAGGER = 0.011 // delay between each word (middle ground)
+const WORD_DURATION = 0.13 // duration of each word's animation (middle ground)
+const PARAGRAPH_GAP = 0.065 // tiny delay between paragraphs (middle ground)
 
 // Calculate when a paragraph animation ends
 const getAnimationEndTime = (text: string, startDelay: number) => {
@@ -33,13 +33,47 @@ const getAnimationEndTime = (text: string, startDelay: number) => {
 }
 
 // Paragraph timing (starts after avatar/name section animation completes ~0.3s)
-const FIRST_PARAGRAPH_START = 0.15
+const FIRST_PARAGRAPH_START = 0.17
 const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
 const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + PARAGRAPH_GAP
 const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
 
 // Export for use in page.tsx (work groups start after bio text completes)
 export const BIO_ANIMATION_END = SECOND_PARAGRAPH_END + 0.1
+
+// Letter-by-letter animation constants
+const LETTER_STAGGER = 0.008 // delay between each letter
+const LETTER_DURATION = 0.12 // duration of each letter's animation
+
+// Component for letter-by-letter animation
+function AnimatedTextByLetter({ text, delay = 0 }: { text: string; delay?: number }) {
+  const shouldReduceMotion = useReducedMotion()
+  const letters = text.split("")
+
+  if (shouldReduceMotion) {
+    return <span>{text}</span>
+  }
+
+  return (
+    <>
+      {letters.map((letter, index) => (
+        <motion.span
+          key={`${letter}-${index}`}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{
+            duration: LETTER_DURATION,
+            delay: delay + index * LETTER_STAGGER,
+            ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+          }}
+          style={{ display: "inline-block" }}
+        >
+          {letter === " " ? "\u00A0" : letter}
+        </motion.span>
+      ))}
+    </>
+  )
+}
 
 // Component for word-by-word animation
 function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
@@ -147,10 +181,10 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
         </motion.div>
         <div className="flex flex-col gap-1.5">
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
-            <AnimatedText text="Rian Touag" delay={0.05} />
+            <AnimatedTextByLetter text="Rian Touag" delay={0.05} />
           </p>
           <p className="text-sm font-normal leading-none text-muted-foreground">
-            <AnimatedText text={updatedDate} delay={0.1} />
+            <AnimatedTextByLetter text={updatedDate} delay={0.1} />
           </p>
         </div>
       </div>
