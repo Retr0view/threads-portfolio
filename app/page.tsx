@@ -170,9 +170,9 @@ export default function Home() {
 
   return (
     <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-[92px] xs:pt-[92px]">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-24 xs:pt-24">
         <IntroSection shouldScaleAvatar={shouldScaleAvatar} onAvatarAnimationComplete={() => setShouldScaleAvatar(false)} />
-        <section className="mt-[92px] flex flex-col gap-8 xs:gap-16 px-[1px]">
+        <section className="mt-24 flex flex-col gap-8 xs:gap-16 px-[1px]">
           {/* Social links and work groups start after bio text animation completes */}
           {/* Work groups stagger with 0.12s between each, duration 0.3s */}
           {/* Dividers animate after each work group finishes (delay + 0.3s + 0.1s gap) */}
@@ -187,7 +187,7 @@ export default function Home() {
             ease: [0.645, 0.045, 0.355, 1],
             delay: BIO_ANIMATION_END + (workGroups.length * 0.12) + 0.12
           }}
-          className="mt-16 flex items-center justify-center"
+          className="mt-24 flex items-center justify-center"
         >
           <motion.div
             whileTap={{ scale: 0.95 }}
