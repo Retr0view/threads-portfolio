@@ -270,6 +270,22 @@ export function ImageLightbox({
                   className="relative w-[75vw] max-w-[1200px]"
                   style={{ aspectRatio: "348 / 196", maxHeight: "100vh" }}
                 >
+                  {/* Background blur placeholder - always visible */}
+                  {blurDataURL && (
+                    <div
+                      className="absolute inset-0"
+                      style={{
+                        backgroundImage: `url(${blurDataURL})`,
+                        backgroundSize: "cover",
+                        backgroundPosition: "center",
+                        filter: "blur(20px)",
+                        transform: "scale(1.1)",
+                        opacity: imageLoaded ? 0 : 1,
+                        transition: "opacity 0.3s ease-out",
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
                   <Image
                     src={imageSrc}
                     alt={`Lightbox image ${currentIndex + 1}`}

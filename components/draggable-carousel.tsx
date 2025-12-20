@@ -209,16 +209,100 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
     }
   }, [x])
 
-  // Memoize click handler
+  // Preload lightbox image for instant loading
+  const preloadLightboxImage = useCallback((imagePath: string) => {
+    if (typeof window === "undefined") return
+    
+    // Use link rel=preload for high priority
+    const link = document.createElement("link")
+    link.rel = "preload"
+    link.as = "image"
+    link.href = imagePath
+    link.setAttribute("fetchpriority", "high")
+    document.head.appendChild(link)
+    
+    // Also preload using Image object for browser cache
+    const img = new window.Image()
+    img.src = imagePath
+    
+    // Clean up link after a delay (image should be cached by then)
+    setTimeout(() => {
+      if (link.parentNode) {
+        link.parentNode.removeChild(link)
+      }
+    }, 5000)
+  }, [])
+
+  // Preload all lightbox images after initial page load (low priority)
+  useEffect(() => {
+    if (typeof window === "undefined") return
+
+    // Use requestIdleCallback to defer preloading until browser is idle
+    // This ensures it doesn't interfere with initial page rendering
+    const preloadAllImages = () => {
+      images.forEach((image) => {
+        const imagePath = image.startsWith("/") ? image : `${imageFolder}/${image}`
+        
+        // Use low priority preload so it doesn't compete with initial page load
+        const link = document.createElement("link")
+        link.rel = "preload"
+        link.as = "image"
+        link.href = imagePath
+        link.setAttribute("fetchpriority", "low")
+        document.head.appendChild(link)
+        
+        // Also preload using Image object for browser cache
+        const img = new window.Image()
+        img.src = imagePath
+        
+        // Clean up link after a delay (image should be cached by then)
+        setTimeout(() => {
+          if (link.parentNode) {
+            link.parentNode.removeChild(link)
+          }
+        }, 10000)
+      })
+    }
+
+    // Wait for page to be interactive, then use idle callback if available
+    if (document.readyState === "complete") {
+      if ("requestIdleCallback" in window) {
+        window.requestIdleCallback(preloadAllImages, { timeout: 2000 })
+      } else {
+        // Fallback: wait a bit then preload
+        setTimeout(preloadAllImages, 1000)
+      }
+    } else {
+      window.addEventListener("load", () => {
+        if ("requestIdleCallback" in window) {
+          window.requestIdleCallback(preloadAllImages, { timeout: 2000 })
+        } else {
+          setTimeout(preloadAllImages, 1000)
+        }
+      })
+    }
+  }, [images, imageFolder])
+
+  // Memoize click handler with preloading
   const handleImageClick = useCallback((e: React.MouseEvent<HTMLDivElement>, index: number) => {
     // Only open lightbox on desktop and if not dragging
     if (isDesktop && !isDragging.current) {
+      const image = images[index]
+      const imagePath = image.startsWith("/") ? image : `${imageFolder}/${image}`
+      
+      // Preload the image BEFORE opening lightbox
+      preloadLightboxImage(imagePath)
+      
       const rect = e.currentTarget.getBoundingClientRect()
       setClickedImageRect(rect)
       setLightboxIndex(index)
-      setLightboxOpen(true)
+      
+      // Small delay to allow preload to start, then open lightbox
+      requestAnimationFrame(() => {
+        setLightboxOpen(true)
+      })
     }
-  }, [isDesktop])
+  }, [isDesktop, images, imageFolder, preloadLightboxImage])
 
   // Memoize hover handlers
   const handleMouseEnter = useCallback(() => setIsHovering(true), [])
@@ -285,6 +369,13 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
               <div 
                 className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
                 onClick={(e) => handleImageClick(e, index)}
+                onMouseEnter={() => {
+                  // Preload on hover for smoother experience
+                  if (isDesktop) {
+                    const imagePath = imageSrc
+                    preloadLightboxImage(imagePath)
+                  }
+                }}
                 style={{
                   cursor: isDesktop ? "pointer" : "default",
                 }}
