@@ -170,9 +170,9 @@ export default function Home() {
 
   return (
     <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
-      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-32 xs:pt-32">
+      <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-[92px] xs:pt-[92px]">
         <IntroSection shouldScaleAvatar={shouldScaleAvatar} onAvatarAnimationComplete={() => setShouldScaleAvatar(false)} />
-        <section className="mt-[98px] flex flex-col gap-8 xs:gap-16 px-[1px]">
+        <section className="mt-[92px] flex flex-col gap-8 xs:gap-16 px-[1px]">
           {/* Social links and work groups start after bio text animation completes */}
           {/* Work groups stagger with 0.12s between each, duration 0.3s */}
           {/* Dividers animate after each work group finishes (delay + 0.3s + 0.1s gap) */}
