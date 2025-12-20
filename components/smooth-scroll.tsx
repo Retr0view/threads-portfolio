@@ -30,14 +30,34 @@ export function SmoothScroll({ children }: { children: ReactNode }) {
 
     setLenis(lenisInstance)
 
+    let rafId: number
+    let isRunning = true
+
     function raf(time: number) {
-      lenisInstance.raf(time)
-      requestAnimationFrame(raf)
+      if (isRunning && !document.hidden) {
+        lenisInstance.raf(time)
+      }
+      rafId = requestAnimationFrame(raf)
     }
 
-    requestAnimationFrame(raf)
+    rafId = requestAnimationFrame(raf)
+
+    // Pause Lenis when page is hidden to save resources
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        isRunning = false
+        lenisInstance.stop()
+      } else {
+        isRunning = true
+        lenisInstance.start()
+      }
+    }
+
+    document.addEventListener("visibilitychange", handleVisibilityChange)
 
     return () => {
+      cancelAnimationFrame(rafId)
+      document.removeEventListener("visibilitychange", handleVisibilityChange)
       lenisInstance.destroy()
     }
   }, [])

@@ -1,9 +1,10 @@
 "use client"
 
+import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"
 import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
-import { useRef, useState, useEffect } from "react"
 import { ImageLightbox } from "./image-lightbox"
+import { useBreakpoint } from "@/lib/hooks"
 
 // Constants
 const MOBILE_BREAKPOINT = 620
@@ -18,10 +19,10 @@ interface DraggableCarouselProps {
   imageFolder: string
 }
 
-export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProps) {
+function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const isDesktop = useBreakpoint(MOBILE_BREAKPOINT)
   const [isHovering, setIsHovering] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -34,23 +35,31 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   const dragStartTime = useRef(0)
   const dragStartX = useRef(0)
 
-  // Update card width and desktop state based on viewport
+  // Update card width based on viewport (debounced via useBreakpoint)
   useEffect(() => {
     const handleResize = () => {
       if (wrapperRef.current) {
         const isMobile = window.innerWidth < MOBILE_BREAKPOINT
         const baseWidth = wrapperRef.current.offsetWidth
         setCardWidth(isMobile ? baseWidth * MOBILE_CARD_WIDTH_RATIO : baseWidth)
-        setIsDesktop(window.innerWidth >= MOBILE_BREAKPOINT)
       }
     }
     
     handleResize()
-    window.addEventListener("resize", handleResize)
-    return () => {
-      window.removeEventListener("resize", handleResize)
+    
+    // Debounce resize handler
+    let timeoutId: NodeJS.Timeout
+    const debouncedResize = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(handleResize, 150)
     }
-  }, [images])
+    
+    window.addEventListener("resize", debouncedResize, { passive: true })
+    return () => {
+      window.removeEventListener("resize", debouncedResize)
+      clearTimeout(timeoutId)
+    }
+  }, [])
 
   // Calculate drag constraints using ResizeObserver to react to actual dimension changes
   useEffect(() => {
@@ -69,30 +78,21 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
     const resizeObserver = new ResizeObserver(updateWidth)
     resizeObserver.observe(interaction)
 
-    // Also update on window resize
-    window.addEventListener("resize", updateWidth)
+    // Debounce window resize handler
+    let timeoutId: NodeJS.Timeout
+    const debouncedUpdate = () => {
+      clearTimeout(timeoutId)
+      timeoutId = setTimeout(updateWidth, 150)
+    }
+
+    window.addEventListener("resize", debouncedUpdate, { passive: true })
 
     return () => {
       resizeObserver.disconnect()
-      window.removeEventListener("resize", updateWidth)
+      window.removeEventListener("resize", debouncedUpdate)
+      clearTimeout(timeoutId)
     }
   }, [images])
-
-  // Preload all images so lightbox opens without loading delays
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    const urls = new Set(
-      images.map((image) =>
-        image.startsWith("/") ? image : `${imageFolder}/${image}`,
-      ),
-    )
-
-    urls.forEach((src) => {
-      const img = new window.Image()
-      img.src = src
-    })
-  }, [images, imageFolder])
 
   // Prevent browser navigation on horizontal swipe gestures
   useEffect(() => {
@@ -170,7 +170,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
   }, [isHovering])
 
   // Handle wheel/trackpad scrolling
-  const handleWheel = (e: React.WheelEvent) => {
+  const handleWheel = useCallback((e: React.WheelEvent) => {
     // Stop any ongoing drag momentum when scrolling starts
     x.stop()
     
@@ -182,9 +182,59 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
       const newX = Math.max(-width, Math.min(0, currentX - delta))
       x.set(newX)
     }
-  }
+  }, [x, width])
 
-  const dragConstraints = width > 0 ? { left: -width, right: 0 } : undefined
+  // Memoize drag start handler
+  const handleDragStart = useCallback(() => {
+    isDragging.current = true
+    dragStartTime.current = Date.now()
+    dragStartX.current = x.get()
+  }, [x])
+
+  // Memoize drag end handler
+  const handleDragEnd = useCallback(() => {
+    const dragDuration = Date.now() - dragStartTime.current
+    const dragDistance = Math.abs(x.get() - dragStartX.current)
+    // Only consider it a drag if it lasted > 100ms or moved significantly (> 5px)
+    if (dragDuration > 100 || dragDistance > 5) {
+      // Reset after a short delay to allow click handler
+      setTimeout(() => {
+        isDragging.current = false
+      }, 100)
+    } else {
+      // Quick tap, reset immediately
+      setTimeout(() => {
+        isDragging.current = false
+      }, 50)
+    }
+  }, [x])
+
+  // Memoize click handler
+  const handleImageClick = useCallback((e: React.MouseEvent<HTMLDivElement>, index: number) => {
+    // Only open lightbox on desktop and if not dragging
+    if (isDesktop && !isDragging.current) {
+      const rect = e.currentTarget.getBoundingClientRect()
+      setClickedImageRect(rect)
+      setLightboxIndex(index)
+      setLightboxOpen(true)
+    }
+  }, [isDesktop])
+
+  // Memoize hover handlers
+  const handleMouseEnter = useCallback(() => setIsHovering(true), [])
+  const handleMouseLeave = useCallback(() => setIsHovering(false), [])
+
+  // Memoize pointer down handler
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // Ensure pointer events are captured even in gap areas
+    e.stopPropagation()
+  }, [])
+
+  // Memoize lightbox handlers
+  const handleLightboxClose = useCallback(() => setLightboxOpen(false), [])
+  const handleLightboxNavigate = useCallback((index: number) => setLightboxIndex(index), [])
+
+  const dragConstraints = useMemo(() => width > 0 ? { left: -width, right: 0 } : undefined, [width])
 
   // If no images, show placeholder
   if (images.length === 0) {
@@ -207,33 +257,11 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
         whileDrag={{ cursor: "grabbing" }}
         onWheel={handleWheel}
-        onMouseEnter={() => setIsHovering(true)}
-        onMouseLeave={() => setIsHovering(false)}
-        onDragStart={() => {
-          isDragging.current = true
-          dragStartTime.current = Date.now()
-          dragStartX.current = x.get()
-        }}
-        onDragEnd={() => {
-          const dragDuration = Date.now() - dragStartTime.current
-          const dragDistance = Math.abs(x.get() - dragStartX.current)
-          // Only consider it a drag if it lasted > 100ms or moved significantly (> 5px)
-          if (dragDuration > 100 || dragDistance > 5) {
-            // Reset after a short delay to allow click handler
-            setTimeout(() => {
-              isDragging.current = false
-            }, 100)
-          } else {
-            // Quick tap, reset immediately
-            setTimeout(() => {
-              isDragging.current = false
-            }, 50)
-          }
-        }}
-        onPointerDown={(e) => {
-          // Ensure pointer events are captured even in gap areas
-          e.stopPropagation()
-        }}
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onPointerDown={handlePointerDown}
       >
           {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
@@ -256,15 +284,7 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
             >
               <div 
                 className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
-                onClick={(e) => {
-                  // Only open lightbox on desktop and if not dragging
-                  if (isDesktop && !isDragging.current) {
-                    const rect = e.currentTarget.getBoundingClientRect()
-                    setClickedImageRect(rect)
-                    setLightboxIndex(index)
-                    setLightboxOpen(true)
-                  }
-                }}
+                onClick={(e) => handleImageClick(e, index)}
                 style={{
                   cursor: isDesktop ? "pointer" : "default",
                 }}
@@ -292,10 +312,14 @@ export function DraggableCarousel({ images, imageFolder }: DraggableCarouselProp
         imageFolder={imageFolder}
         currentIndex={lightboxIndex}
         clickedImageRect={clickedImageRect}
-        onClose={() => setLightboxOpen(false)}
-        onNavigate={(index) => setLightboxIndex(index)}
+        onClose={handleLightboxClose}
+        onNavigate={handleLightboxNavigate}
       />
     </div>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders
+export const DraggableCarousel = React.memo(DraggableCarouselComponent)
+
 

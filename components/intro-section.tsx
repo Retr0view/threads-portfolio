@@ -2,9 +2,10 @@
 
 import { Image } from "@unpic/react/nextjs"
 import Link from "next/link"
-import { useState, useEffect } from "react"
+import { useState, useCallback, useMemo } from "react"
 import { motion, useReducedMotion } from "framer-motion"
 import lastCommitDateData from "@/lib/last-commit-date.json"
+import { useIsDesktop } from "@/lib/hooks"
 
 const socialLinks = [
   { name: "Twitter", icon: "/icons/twitter.svg", url: "https://x.com/RianTouag" },
@@ -73,28 +74,23 @@ function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
 
 export function IntroSection() {
   const [profileError, setProfileError] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
+  const isDesktop = useIsDesktop()
   const shouldReduceMotion = useReducedMotion()
 
-  useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024)
-    }
-    checkDesktop()
-    window.addEventListener("resize", checkDesktop)
-    return () => window.removeEventListener("resize", checkDesktop)
-  }, [])
+  const handleProfileError = useCallback(() => setProfileError(true), [])
 
-  const formatDate = (date: Date) => {
+  const formatDate = useCallback((date: Date) => {
     const day = date.getDate()
     const month = date.toLocaleDateString("en-US", { month: "short" })
     const year = date.getFullYear()
     return `Updated ${day} ${month} ${year}`
-  }
+  }, [])
+
+  // Memoize date formatting
+  const updatedDate = useMemo(() => formatDate(BIO_UPDATED_DATE), [formatDate])
 
   // Start social links animation after second paragraph completes with a small gap
   const socialLinksStartDelay = SECOND_PARAGRAPH_END + 0.1
-  const updatedDate = formatDate(BIO_UPDATED_DATE)
   return (
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
@@ -109,7 +105,7 @@ export function IntroSection() {
               className="object-cover w-full h-full"
               {...(isDesktop && { unoptimized: true })}
               priority
-              onError={() => setProfileError(true)}
+              onError={handleProfileError}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-sm text-muted-foreground">

@@ -1,7 +1,7 @@
 "use client"
 
+import React, { useState, useCallback } from "react"
 import Image from "next/image"
-import { useState, useEffect } from "react"
 import { DraggableCarousel } from "./draggable-carousel"
 import { WorkGroup as WorkGroupType } from "@/lib/work-groups"
 
@@ -9,18 +9,16 @@ interface WorkGroupProps {
   workGroup: WorkGroupType
 }
 
-export function WorkGroup({ workGroup }: WorkGroupProps) {
+function WorkGroupComponent({ workGroup }: WorkGroupProps) {
   const [logoError, setLogoError] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
 
-  useEffect(() => {
-    const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024)
-    }
-    checkDesktop()
-    window.addEventListener("resize", checkDesktop)
-    return () => window.removeEventListener("resize", checkDesktop)
-  }, [])
+  const handleLogoError = useCallback(() => setLogoError(true), [])
+
+  // Memoize images array to prevent unnecessary re-renders of DraggableCarousel
+  const carouselImages = React.useMemo(
+    () => workGroup.images.length > 0 ? workGroup.images : Array(3).fill(workGroup.placeholderImage),
+    [workGroup.images, workGroup.placeholderImage]
+  )
 
   return (
     <div className="flex flex-col gap-4">
@@ -34,7 +32,7 @@ export function WorkGroup({ workGroup }: WorkGroupProps) {
                 width={44}
                 height={44}
                 className="object-cover w-full h-full"
-                onError={() => setLogoError(true)}
+                onError={handleLogoError}
                 sizes="44px"
               />
             ) : (
@@ -56,10 +54,13 @@ export function WorkGroup({ workGroup }: WorkGroupProps) {
 
         {/* Draggable Image Carousel */}
         <DraggableCarousel
-          images={workGroup.images.length > 0 ? workGroup.images : Array(3).fill(workGroup.placeholderImage)}
+          images={carouselImages}
           imageFolder={workGroup.imageFolder}
         />
       </div>
   )
 }
+
+// Memoize component to prevent unnecessary re-renders
+export const WorkGroup = React.memo(WorkGroupComponent)
 
