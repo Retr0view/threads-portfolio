@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { motion, useMotionValue, animate, useReducedMotion } from "framer-motion"
-import { useEffect, useRef, useMemo, useCallback } from "react"
+import { useEffect, useRef, useMemo, useCallback, useState } from "react"
 import { IntroSection, BIO_ANIMATION_END } from "@/components/intro-section"
 import { WorkGroup } from "@/components/work-group"
 import { workGroups } from "@/lib/work-groups"
@@ -79,7 +79,8 @@ export default function Home() {
   const { lenis } = useLenis()
   const isAnimatingRef = useRef(false)
   const mainRef = useRef<HTMLElement>(null)
-  const shouldReduceMotion = useReducedMotion()
+  const shouldReduceMotion = useReducedMotion() ?? false
+  const [shouldScaleAvatar, setShouldScaleAvatar] = useState(false)
 
   // Memoize scroll handler
   const handleScroll = useCallback(({ scroll }: { scroll: number }) => {
@@ -128,6 +129,13 @@ export default function Home() {
         },
       }).then(() => {
         // Then spring to top (accounting for top padding) - less bouncy spring
+        // Estimate spring duration (~0.4s) and start avatar animation 0.05s before it ends
+        const estimatedSpringDuration = 0.4
+        const avatarStartDelay = estimatedSpringDuration - 0.05
+        const avatarTimeout = setTimeout(() => {
+          setShouldScaleAvatar(true)
+        }, avatarStartDelay * 1000)
+        
         animate(scrollY, overshootAmount, {
           type: "spring",
           stiffness: 400,
@@ -136,6 +144,8 @@ export default function Home() {
             lenis.scrollTo(latest, { immediate: true })
           },
           onComplete: () => {
+            // Clear timeout if spring completed before avatar trigger (shouldn't happen, but safety)
+            clearTimeout(avatarTimeout)
             // Scroll to actual top (0) without animation
             lenis.scrollTo(0, { immediate: true })
             scrollY.set(0)
@@ -161,17 +171,7 @@ export default function Home() {
   return (
     <main ref={mainRef} className="min-h-screen bg-background overflow-x-hidden">
       <div className="mx-auto flex w-full max-w-[620px] flex-col px-3 xs:px-6 pt-10 pb-32 xs:pt-32">
-        <motion.div
-          initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-          animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
-          transition={{ 
-            duration: 0.3, 
-            ease: [0.645, 0.045, 0.355, 1],
-            delay: 0
-          }}
-        >
-          <IntroSection />
-        </motion.div>
+        <IntroSection shouldScaleAvatar={shouldScaleAvatar} onAvatarAnimationComplete={() => setShouldScaleAvatar(false)} />
         <section className="mt-[98px] flex flex-col gap-8 xs:gap-16 px-[1px]">
           {/* Social links and work groups start after bio text animation completes */}
           {/* Work groups stagger with 0.12s between each, duration 0.3s */}

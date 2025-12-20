@@ -2,8 +2,8 @@
 
 import { Image } from "@unpic/react/nextjs"
 import Link from "next/link"
-import { useState, useCallback, useMemo } from "react"
-import { motion, useReducedMotion } from "framer-motion"
+import { useState, useCallback, useMemo, useEffect, useRef } from "react"
+import { motion, useReducedMotion, useMotionValue, animate } from "framer-motion"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 import { useIsDesktop } from "@/lib/hooks"
 
@@ -22,9 +22,9 @@ const bioText = {
 }
 
 // Animation timing constants (tuned for a snappier feel)
-const WORD_STAGGER = 0.02 // delay between each word (was 0.03)
-const WORD_DURATION = 0.2 // duration of each word's animation (was 0.3)
-const PARAGRAPH_GAP = 0.12 // tiny delay between paragraphs (was 0.15)
+const WORD_STAGGER = 0.008 // delay between each word (was 0.015)
+const WORD_DURATION = 0.12 // duration of each word's animation (was 0.15)
+const PARAGRAPH_GAP = 0.05 // tiny delay between paragraphs (was 0.08)
 
 // Calculate when a paragraph animation ends
 const getAnimationEndTime = (text: string, startDelay: number) => {
@@ -33,7 +33,7 @@ const getAnimationEndTime = (text: string, startDelay: number) => {
 }
 
 // Paragraph timing (starts after avatar/name section animation completes ~0.3s)
-const FIRST_PARAGRAPH_START = 0.25
+const FIRST_PARAGRAPH_START = 0.15
 const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
 const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + PARAGRAPH_GAP
 const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
@@ -72,12 +72,41 @@ function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
   )
 }
 
-export function IntroSection() {
+export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: { shouldScaleAvatar?: boolean; onAvatarAnimationComplete?: () => void }) {
   const [profileError, setProfileError] = useState(false)
   const isDesktop = useIsDesktop()
   const shouldReduceMotion = useReducedMotion()
+  const avatarScale = useMotionValue(shouldReduceMotion ? 1 : 0.85)
+  const hasAnimatedRef = useRef(false)
 
   const handleProfileError = useCallback(() => setProfileError(true), [])
+
+  // Initial scale animation on mount
+  useEffect(() => {
+    if (!shouldReduceMotion) {
+      animate(avatarScale, 1, {
+        type: "spring",
+        stiffness: 400,
+        damping: 20,
+      })
+    }
+  }, [shouldReduceMotion, avatarScale])
+
+  // Trigger scale animation when shouldScaleAvatar becomes true
+  useEffect(() => {
+    if (shouldScaleAvatar && !shouldReduceMotion && !hasAnimatedRef.current) {
+      hasAnimatedRef.current = true
+      animate(avatarScale, [1, 1.15, 1], {
+        duration: 0.4,
+        ease: [0.215, 0.61, 0.355, 1],
+      }).then(() => {
+        hasAnimatedRef.current = false
+        if (onAvatarAnimationComplete) {
+          onAvatarAnimationComplete()
+        }
+      })
+    }
+  }, [shouldScaleAvatar, shouldReduceMotion, avatarScale, onAvatarAnimationComplete])
 
   const formatDate = useCallback((date: Date) => {
     const day = date.getDate()
@@ -95,7 +124,10 @@ export function IntroSection() {
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
       <div className="flex items-center gap-3.5">
-        <div className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] dark:shadow-none">
+        <motion.div
+          className="relative h-11 w-11 shrink-0 overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] dark:shadow-none"
+          style={{ scale: avatarScale }}
+        >
           {!profileError ? (
             <Image
               src="/profile/profile picture - rian.jpg"
@@ -112,13 +144,13 @@ export function IntroSection() {
               RT
             </div>
           )}
-        </div>
+        </motion.div>
         <div className="flex flex-col gap-1.5">
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
-            Rian Touag
+            <AnimatedText text="Rian Touag" delay={0.05} />
           </p>
           <p className="text-sm font-normal leading-none text-muted-foreground">
-            {updatedDate}
+            <AnimatedText text={updatedDate} delay={0.1} />
           </p>
         </div>
       </div>
