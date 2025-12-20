@@ -24,7 +24,7 @@ const bioText = {
 // Animation timing constants (tuned for a snappier feel)
 const WORD_STAGGER = 0.011 // delay between each word (middle ground)
 const WORD_DURATION = 0.13 // duration of each word's animation (middle ground)
-const PARAGRAPH_GAP = 0.065 // tiny delay between paragraphs (middle ground)
+const PARAGRAPH_GAP = 0 // no delay between paragraphs
 
 // Calculate when a paragraph animation ends
 const getAnimationEndTime = (text: string, startDelay: number) => {
