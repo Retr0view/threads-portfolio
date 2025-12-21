@@ -4,6 +4,8 @@ import { motion, AnimatePresence, useReducedMotion, Variants } from "framer-moti
 import Image from "next/image"
 import { useEffect, useRef, useState, useCallback, useMemo } from "react"
 import blurDataMap from "@/lib/image-blur-data.json"
+import { normalizeImagePath } from "@/lib/image-utils"
+import { calculateTransformOrigin } from "@/lib/image-lightbox-utils"
 
 interface ImageLightboxProps {
   isOpen: boolean
@@ -75,20 +77,10 @@ export function ImageLightbox({
   const [imageError, setImageError] = useState(false)
 
   // Calculate transform origin from clicked image position (memoized)
-  const transformOrigin = useMemo(() => {
-    if (!clickedImageRect) return "center center"
-    
-    const centerX = clickedImageRect.left + clickedImageRect.width / 2
-    const centerY = clickedImageRect.top + clickedImageRect.height / 2
-    const viewportCenterX = window.innerWidth / 2
-    const viewportCenterY = window.innerHeight / 2
-    
-    // Calculate percentage from viewport center
-    const originX = ((centerX - viewportCenterX) / window.innerWidth) * 100 + 50
-    const originY = ((centerY - viewportCenterY) / window.innerHeight) * 100 + 50
-    
-    return `${originX}% ${originY}%`
-  }, [clickedImageRect])
+  const transformOrigin = useMemo(
+    () => calculateTransformOrigin(clickedImageRect, prefersReducedMotion ?? false),
+    [clickedImageRect, prefersReducedMotion]
+  )
 
   // Memoize navigation handlers
   const handlePrev = useCallback(() => {
@@ -113,8 +105,18 @@ export function ImageLightbox({
       handlePrev()
     } else if (e.key === "ArrowRight") {
       handleNext()
+    } else if (e.key === "Home") {
+      // Jump to first image
+      if (images.length > 0) {
+        onNavigate(0)
+      }
+    } else if (e.key === "End") {
+      // Jump to last image
+      if (images.length > 0) {
+        onNavigate(images.length - 1)
+      }
     }
-  }, [onClose, handlePrev, handleNext])
+  }, [onClose, handlePrev, handleNext, images.length, onNavigate])
 
   // Keyboard navigation
   useEffect(() => {
@@ -145,9 +147,7 @@ export function ImageLightbox({
   // Memoize image source
   const imageSrc = useMemo(() => {
     const currentImage = images[currentIndex]
-    return currentImage?.startsWith("/")
-      ? currentImage
-      : `${imageFolder}/${currentImage}`
+    return currentImage ? normalizeImagePath(currentImage, imageFolder) : ""
   }, [images, currentIndex, imageFolder])
 
   // Look up blurDataURL for current image
@@ -196,9 +196,7 @@ export function ImageLightbox({
 
     imagesToPreload.forEach((index) => {
       const image = images[index]
-      const src = image?.startsWith("/")
-        ? image
-        : `${imageFolder}/${image}`
+      const src = image ? normalizeImagePath(image, imageFolder) : ""
       
       // Use link rel=preload for high priority loading
       const link = document.createElement("link")
@@ -279,8 +277,8 @@ export function ImageLightbox({
               {/* Image */}
               <div className="relative rounded-lg overflow-hidden border-[3px] border-border shadow-2xl flex items-center justify-center p-0 box-border">
                 <div
-                  className="relative w-[75vw] max-w-[1200px]"
-                  style={{ aspectRatio: "348 / 196", maxHeight: "100vh" }}
+                  className="relative w-[min(75vw,calc((100vh-92px)*348/196))] max-w-[1200px]"
+                  style={{ aspectRatio: "348 / 196", maxHeight: "calc(100vh - 92px)" }}
                 >
                   {/* Background blur placeholder - always visible */}
                   {blurDataURL && (
@@ -302,7 +300,7 @@ export function ImageLightbox({
                     src={imageSrc}
                     alt={`Lightbox image ${currentIndex + 1}`}
                     fill
-                    className={`object-contain scale-[1.02] transition-opacity duration-300 ${
+                    className={`object-contain scale-[1.005] transition-opacity duration-300 ${
                       imageLoaded ? "opacity-100" : "opacity-0"
                     }`}
                     sizes="(max-width: 768px) 100vw, (max-width: 1200px) 75vw, 1200px"
