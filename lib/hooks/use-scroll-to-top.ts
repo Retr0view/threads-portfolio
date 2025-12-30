@@ -35,7 +35,7 @@ import { ANIMATION, EASING } from "@/lib/constants"
  */
 export function useScrollToTop(
   scrollY: MotionValue<number>,
-  mainRef: React.RefObject<HTMLElement>,
+  mainRef: React.RefObject<HTMLElement | null>,
   isAnimatingRef: React.MutableRefObject<boolean>
 ) {
   const { lenis } = useLenis()

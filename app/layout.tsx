@@ -99,12 +99,12 @@ export const metadata: Metadata = {
   manifest: "/manifest.json",
   icons: {
     icon: [
-      { url: "/og-assets/favicon 32.jpg", sizes: "32x32", type: "image/jpeg" },
-      { url: "/og-assets/favicon 64.jpg", sizes: "64x64", type: "image/jpeg" },
-      { url: "/og-assets/favicon 128.jpg", sizes: "128x128", type: "image/jpeg" },
+      { url: "/og-assets/favicon 32.png", sizes: "32x32", type: "image/png" },
+      { url: "/og-assets/favicon 64.png", sizes: "64x64", type: "image/png" },
+      { url: "/og-assets/favicon 128.png", sizes: "128x128", type: "image/png" },
     ],
     apple: [
-      { url: "/og-assets/favicon 128.jpg", sizes: "180x180", type: "image/jpeg" },
+      { url: "/og-assets/favicon 128.png", sizes: "180x180", type: "image/png" },
     ],
   },
   // Add verification if provided
