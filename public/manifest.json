@@ -13,21 +13,21 @@
   "dir": "ltr",
   "icons": [
     {
-      "src": "/og-assets/favicon 32.png",
+      "src": "/og-assets/favicon 32.jpg",
       "sizes": "32x32",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/og-assets/favicon 64.png",
+      "src": "/og-assets/favicon 64.jpg",
       "sizes": "64x64",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any"
     },
     {
-      "src": "/og-assets/favicon 128.png",
+      "src": "/og-assets/favicon 128.jpg",
       "sizes": "128x128",
-      "type": "image/png",
+      "type": "image/jpeg",
       "purpose": "any maskable"
     }
   ]
