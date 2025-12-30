@@ -20,7 +20,7 @@ import { useEffect, useRef, useState, useCallback } from "react"
 export function useResizeObserver(debounceMs: number = 150) {
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 })
   const ref = useRef<HTMLElement>(null)
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
     const element = ref.current
