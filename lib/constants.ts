@@ -1,0 +1,90 @@
+/**
+ * Application constants
+ * Centralized constants for animations, breakpoints, and timing values
+ */
+
+// Breakpoints
+export const BREAKPOINTS = {
+  MOBILE: 620,
+  DESKTOP: 1024,
+} as const
+
+// Animation timing constants
+export const ANIMATION = {
+  // General durations
+  DURATION_SHORT: 0.2,
+  DURATION_MEDIUM: 0.3,
+  DURATION_LONG: 0.4,
+  
+  // Intro section - word animation
+  WORD_STAGGER: 0.02,
+  WORD_DURATION: 0.2,
+  PARAGRAPH_GAP: 0.12,
+  FIRST_PARAGRAPH_START: 0.25,
+  BIO_ANIMATION_END_OFFSET: 0.1,
+  
+  // Intro section - letter animation
+  LETTER_STAGGER: 0.008,
+  LETTER_DURATION: 0.12,
+  NAME_DELAY: 0.05,
+  DATE_DELAY: 0.1,
+  
+  // Work groups
+  WORK_GROUP_STAGGER: 0.12,
+  WORK_GROUP_DURATION: 0.3,
+  DIVIDER_DELAY_AFTER_WORK_GROUP: 0.1,
+  
+  // Carousel
+  CAROUSEL_ANIMATION_DURATION: 0.3,
+  CAROUSEL_STAGGER_DELAY: 0.05,
+  CAROUSEL_DRAG_ELASTIC: 0.1,
+  CAROUSEL_DRAG_BOUNCE_STIFFNESS: 600,
+  CAROUSEL_DRAG_BOUNCE_DAMPING: 30,
+  CAROUSEL_MOBILE_CARD_WIDTH_RATIO: 0.9,
+  
+  // Lightbox
+  LIGHTBOX_BACKDROP_DURATION: 0.2,
+  LIGHTBOX_IMAGE_DURATION_REDUCED: 0.15,
+  LIGHTBOX_IMAGE_DURATION_NORMAL: 0.25,
+  LIGHTBOX_EXIT_DURATION: 0.2,
+  
+  // Scroll to top
+  SCROLL_OVERSHOOT_AMOUNT: 100,
+  SCROLL_OVERSHOOT_DURATION: 0.2,
+  SCROLL_SPRING_STIFFNESS: 400,
+  SCROLL_SPRING_DAMPING: 30,
+  SCROLL_SPRING_DURATION: 0.4,
+  SCROLL_AVATAR_START_DELAY_OFFSET: 0.05,
+  
+  // Social links
+  SOCIAL_LINK_STAGGER: 0.1,
+  SOCIAL_LINK_DURATION: 0.4,
+  SOCIAL_LINK_TAP_SCALE: 0.95,
+  
+  // Avatar
+  AVATAR_INITIAL_SCALE: 0.85,
+  AVATAR_SCALE_ANIMATION_STIFFNESS: 400,
+  AVATAR_SCALE_ANIMATION_DAMPING: 20,
+  AVATAR_BOUNCE_SCALE: 1.15,
+} as const
+
+// Easing functions (cubic bezier)
+export const EASING = {
+  EASE_OUT_CUBIC: [0.215, 0.61, 0.355, 1] as const,
+  EASE_IN_OUT_CUBIC: [0.645, 0.045, 0.355, 1] as const,
+  EASE_IN_OUT_QUART: [0.25, 0.1, 0.25, 1] as const,
+} as const
+
+// Image aspect ratios
+export const IMAGE_ASPECT_RATIO = {
+  CAROUSEL: "348/196",
+} as const
+
+// Preload timeouts (in milliseconds)
+export const PRELOAD = {
+  LIGHTBOX_IMAGE_TIMEOUT: 5000,
+  ALL_IMAGES_TIMEOUT: 10000,
+  IDLE_CALLBACK_TIMEOUT: 2000,
+  FALLBACK_DELAY: 1000,
+} as const
+

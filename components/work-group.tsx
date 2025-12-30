@@ -63,4 +63,3 @@ function WorkGroupComponent({ workGroup }: WorkGroupProps) {
 
 // Memoize component to prevent unnecessary re-renders
 export const WorkGroup = React.memo(WorkGroupComponent)
-

@@ -18,6 +18,8 @@ const config = {
       },
     },
     screens: {
+        // Custom xs breakpoint at 620px (matches MOBILE breakpoint constant)
+        // Used for mobile-specific spacing and layout adjustments
         xs: "620px",
       },
       extend: {

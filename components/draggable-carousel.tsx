@@ -5,14 +5,8 @@ import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import { ImageLightbox } from "./image-lightbox"
 import { useBreakpoint } from "@/lib/hooks"
-
-// Constants
-const MOBILE_BREAKPOINT = 620
-const MOBILE_CARD_WIDTH_RATIO = 0.9
-const ANIMATION_DURATION = 0.3
-const STAGGER_DELAY = 0.05
-const DRAG_BOUNCE_STIFFNESS = 600
-const DRAG_BOUNCE_DAMPING = 30
+import { BREAKPOINTS, ANIMATION, EASING, IMAGE_ASPECT_RATIO, PRELOAD } from "@/lib/constants"
+import { normalizeImagePath } from "@/lib/image-utils"
 
 interface DraggableCarouselProps {
   images: string[]
@@ -22,7 +16,7 @@ interface DraggableCarouselProps {
 function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
-  const isDesktop = useBreakpoint(MOBILE_BREAKPOINT)
+  const isDesktop = useBreakpoint(BREAKPOINTS.MOBILE)
   const [isHovering, setIsHovering] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
@@ -34,14 +28,16 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
   const isDragging = useRef(false)
   const dragStartTime = useRef(0)
   const dragStartX = useRef(0)
+  const preloadLinksRef = useRef<HTMLLinkElement[]>([])
+  const preloadTimeoutsRef = useRef<NodeJS.Timeout[]>([])
 
   // Update card width based on viewport (debounced via useBreakpoint)
   useEffect(() => {
     const handleResize = () => {
       if (wrapperRef.current) {
-        const isMobile = window.innerWidth < MOBILE_BREAKPOINT
+        const isMobile = window.innerWidth < BREAKPOINTS.MOBILE
         const baseWidth = wrapperRef.current.offsetWidth
-        setCardWidth(isMobile ? baseWidth * MOBILE_CARD_WIDTH_RATIO : baseWidth)
+        setCardWidth(isMobile ? baseWidth * ANIMATION.CAROUSEL_MOBILE_CARD_WIDTH_RATIO : baseWidth)
       }
     }
     
@@ -220,28 +216,35 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
     link.href = imagePath
     link.setAttribute("fetchpriority", "high")
     document.head.appendChild(link)
+    preloadLinksRef.current.push(link)
     
     // Also preload using Image object for browser cache
     const img = new window.Image()
     img.src = imagePath
     
     // Clean up link after a delay (image should be cached by then)
-    setTimeout(() => {
+    const timeout = setTimeout(() => {
       if (link.parentNode) {
         link.parentNode.removeChild(link)
+        preloadLinksRef.current = preloadLinksRef.current.filter((l) => l !== link)
       }
-    }, 5000)
+        }, PRELOAD.LIGHTBOX_IMAGE_TIMEOUT)
+    preloadTimeoutsRef.current.push(timeout)
   }, [])
 
   // Preload all lightbox images after initial page load (low priority)
   useEffect(() => {
     if (typeof window === "undefined") return
 
+    let loadHandler: (() => void) | null = null
+    let idleCallbackId: number | null = null
+    let fallbackTimeout: NodeJS.Timeout | null = null
+
     // Use requestIdleCallback to defer preloading until browser is idle
     // This ensures it doesn't interfere with initial page rendering
     const preloadAllImages = () => {
       images.forEach((image) => {
-        const imagePath = image.startsWith("/") ? image : `${imageFolder}/${image}`
+        const imagePath = normalizeImagePath(image, imageFolder)
         
         // Use low priority preload so it doesn't compete with initial page load
         const link = document.createElement("link")
@@ -250,36 +253,70 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
         link.href = imagePath
         link.setAttribute("fetchpriority", "low")
         document.head.appendChild(link)
+        preloadLinksRef.current.push(link)
         
         // Also preload using Image object for browser cache
         const img = new window.Image()
         img.src = imagePath
         
         // Clean up link after a delay (image should be cached by then)
-        setTimeout(() => {
+        const timeout = setTimeout(() => {
           if (link.parentNode) {
             link.parentNode.removeChild(link)
+            preloadLinksRef.current = preloadLinksRef.current.filter((l) => l !== link)
           }
-        }, 10000)
+        }, PRELOAD.ALL_IMAGES_TIMEOUT)
+        preloadTimeoutsRef.current.push(timeout)
       })
     }
 
     // Wait for page to be interactive, then use idle callback if available
     if (document.readyState === "complete") {
       if ("requestIdleCallback" in window) {
-        window.requestIdleCallback(preloadAllImages, { timeout: 2000 })
+        idleCallbackId = window.requestIdleCallback(preloadAllImages, { timeout: PRELOAD.IDLE_CALLBACK_TIMEOUT }) as unknown as number
       } else {
         // Fallback: wait a bit then preload
-        setTimeout(preloadAllImages, 1000)
+        fallbackTimeout = setTimeout(preloadAllImages, PRELOAD.FALLBACK_DELAY)
       }
     } else {
-      window.addEventListener("load", () => {
+      loadHandler = () => {
         if ("requestIdleCallback" in window) {
-          window.requestIdleCallback(preloadAllImages, { timeout: 2000 })
+          idleCallbackId = window.requestIdleCallback(preloadAllImages, { timeout: PRELOAD.IDLE_CALLBACK_TIMEOUT }) as unknown as number
         } else {
-          setTimeout(preloadAllImages, 1000)
+          fallbackTimeout = setTimeout(preloadAllImages, PRELOAD.FALLBACK_DELAY)
+        }
+      }
+      window.addEventListener("load", loadHandler)
+    }
+
+    // Cleanup function
+    return () => {
+      // Remove event listener if it was added
+      if (loadHandler) {
+        window.removeEventListener("load", loadHandler)
+      }
+      
+      // Cancel idle callback if it exists
+      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
+        window.cancelIdleCallback(idleCallbackId)
+      }
+      
+      // Clear fallback timeout
+      if (fallbackTimeout) {
+        clearTimeout(fallbackTimeout)
+      }
+      
+      // Clean up all preload links
+      preloadLinksRef.current.forEach((link) => {
+        if (link.parentNode) {
+          link.parentNode.removeChild(link)
         }
       })
+      preloadLinksRef.current = []
+      
+      // Clear all timeouts
+      preloadTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
+      preloadTimeoutsRef.current = []
     }
   }, [images, imageFolder])
 
@@ -335,9 +372,9 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
         className="flex gap-3 xs:gap-6 cursor-grab active:cursor-grabbing w-fit select-none"
         drag="x"
         dragConstraints={dragConstraints}
-        dragElastic={0.1}
+        dragElastic={ANIMATION.CAROUSEL_DRAG_ELASTIC}
         dragPropagation={false}
-        dragTransition={{ bounceStiffness: DRAG_BOUNCE_STIFFNESS, bounceDamping: DRAG_BOUNCE_DAMPING }}
+        dragTransition={{ bounceStiffness: ANIMATION.CAROUSEL_DRAG_BOUNCE_STIFFNESS, bounceDamping: ANIMATION.CAROUSEL_DRAG_BOUNCE_DAMPING }}
         style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
         whileDrag={{ cursor: "grabbing" }}
         onWheel={handleWheel}
@@ -360,14 +397,14 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={prefersReducedMotion ? { duration: 0 } : { 
-                duration: ANIMATION_DURATION, 
-                ease: [0.25, 0.1, 0.25, 1],
-                delay: index * STAGGER_DELAY
+                duration: ANIMATION.CAROUSEL_ANIMATION_DURATION, 
+                ease: EASING.EASE_IN_OUT_QUART,
+                delay: index * ANIMATION.CAROUSEL_STAGGER_DELAY
               }}
               drag={false}
             >
               <div 
-                className="relative aspect-[348/196] w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
+                className="relative w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
                 onClick={(e) => handleImageClick(e, index)}
                 onMouseEnter={() => {
                   // Preload on hover for smoother experience
@@ -378,6 +415,7 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
                 }}
                 style={{
                   cursor: isDesktop ? "pointer" : "default",
+                  aspectRatio: IMAGE_ASPECT_RATIO.CAROUSEL,
                 }}
               >
                 <Image
@@ -385,7 +423,7 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
                   alt={`Carousel image ${index + 1}`}
                   fill
                   className="object-cover select-none"
-                  sizes="(max-width: 620px) 90vw, 620px"
+                  sizes={`(max-width: ${BREAKPOINTS.MOBILE}px) 90vw, ${BREAKPOINTS.MOBILE}px`}
                   priority={index === 0}
                   loading={index === 0 ? "eager" : "lazy"}
                   draggable={false}
@@ -412,5 +450,3 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
 
 // Memoize component to prevent unnecessary re-renders
 export const DraggableCarousel = React.memo(DraggableCarouselComponent)
-
-

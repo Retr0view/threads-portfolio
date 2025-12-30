@@ -50,7 +50,10 @@ html.lenis body {
   }
 }
 
-/* Dark mode - outside @layer for higher cascade priority */
+/* Dark mode - outside @layer for higher cascade priority
+ * This is intentionally outside @layer base to ensure dark mode styles
+ * have higher specificity and override light mode variables correctly
+ */
 :root.dark {
   --background: 20 14.3% 4.1%;
   --foreground: 60 9.1% 97.8%;
@@ -85,6 +88,22 @@ html.lenis body {
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     font-smooth: always;
+  }
+  
+  /* Focus indicators for accessibility */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  
+  /* Ensure buttons and links have visible focus states */
+  button:focus-visible,
+  a:focus-visible {
+    @apply outline-2 outline-offset-2 outline-ring;
+  }
+  
+  /* Remove default focus outline for mouse users, keep for keyboard */
+  *:focus:not(:focus-visible) {
+    outline: none;
   }
 }
 

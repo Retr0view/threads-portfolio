@@ -6,12 +6,8 @@ import { useState, useCallback, useMemo, useEffect, useRef } from "react"
 import { motion, useReducedMotion, useMotionValue, animate } from "framer-motion"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 import { useIsDesktop } from "@/lib/hooks"
-
-const socialLinks = [
-  { name: "Twitter", icon: "/icons/twitter.svg", url: "https://x.com/RianTouag" },
-  { name: "Telegram", icon: "/icons/Telegram.svg", url: "https://t.me/Coinlandingpage" },
-  { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
-]
+import { socialLinks } from "@/lib/site-config"
+import { ANIMATION, EASING } from "@/lib/constants"
 
 // Bio text - date from last git commit
 const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
@@ -21,29 +17,20 @@ const bioText = {
   second: "From concept through launch and beyond, I work with founders and startups. To focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
 }
 
-// Animation timing constants (tuned for a snappier feel)
-const WORD_STAGGER = 0.011 // delay between each word (middle ground)
-const WORD_DURATION = 0.13 // duration of each word's animation (middle ground)
-const PARAGRAPH_GAP = 0 // no delay between paragraphs
-
 // Calculate when a paragraph animation ends
 const getAnimationEndTime = (text: string, startDelay: number) => {
   const wordCount = text.split(" ").length
-  return startDelay + (wordCount - 1) * WORD_STAGGER + WORD_DURATION
+  return startDelay + (wordCount - 1) * ANIMATION.WORD_STAGGER + ANIMATION.WORD_DURATION
 }
 
 // Paragraph timing (starts after avatar/name section animation completes ~0.3s)
-const FIRST_PARAGRAPH_START = 0.17
+const FIRST_PARAGRAPH_START = ANIMATION.FIRST_PARAGRAPH_START
 const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
-const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + PARAGRAPH_GAP
+const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + ANIMATION.PARAGRAPH_GAP
 const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
 
 // Export for use in page.tsx (work groups start after bio text completes)
-export const BIO_ANIMATION_END = SECOND_PARAGRAPH_END + 0.1
-
-// Letter-by-letter animation constants
-const LETTER_STAGGER = 0.008 // delay between each letter
-const LETTER_DURATION = 0.12 // duration of each letter's animation
+export const BIO_ANIMATION_END = SECOND_PARAGRAPH_END + ANIMATION.BIO_ANIMATION_END_OFFSET
 
 // Component for letter-by-letter animation
 function AnimatedTextByLetter({ text, delay = 0 }: { text: string; delay?: number }) {
@@ -62,9 +49,9 @@ function AnimatedTextByLetter({ text, delay = 0 }: { text: string; delay?: numbe
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            duration: LETTER_DURATION,
-            delay: delay + index * LETTER_STAGGER,
-            ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+            duration: ANIMATION.LETTER_DURATION,
+            delay: delay + index * ANIMATION.LETTER_STAGGER,
+            ease: EASING.EASE_OUT_CUBIC,
           }}
           style={{ display: "inline-block" }}
         >
@@ -92,9 +79,9 @@ function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
           initial={{ opacity: 0, y: 4 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{
-            duration: WORD_DURATION,
-            delay: delay + index * WORD_STAGGER,
-            ease: [0.215, 0.61, 0.355, 1], // ease-out-cubic
+            duration: ANIMATION.WORD_DURATION,
+            delay: delay + index * ANIMATION.WORD_STAGGER,
+            ease: EASING.EASE_OUT_CUBIC,
           }}
           style={{ display: "inline-block" }}
         >
@@ -110,7 +97,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
   const [profileError, setProfileError] = useState(false)
   const isDesktop = useIsDesktop()
   const shouldReduceMotion = useReducedMotion()
-  const avatarScale = useMotionValue(shouldReduceMotion ? 1 : 0.85)
+  const avatarScale = useMotionValue(shouldReduceMotion ? 1 : ANIMATION.AVATAR_INITIAL_SCALE)
   const hasAnimatedRef = useRef(false)
 
   const handleProfileError = useCallback(() => setProfileError(true), [])
@@ -120,8 +107,8 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
     if (!shouldReduceMotion) {
       animate(avatarScale, 1, {
         type: "spring",
-        stiffness: 400,
-        damping: 20,
+        stiffness: ANIMATION.AVATAR_SCALE_ANIMATION_STIFFNESS,
+        damping: ANIMATION.AVATAR_SCALE_ANIMATION_DAMPING,
       })
     }
   }, [shouldReduceMotion, avatarScale])
@@ -130,9 +117,9 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
   useEffect(() => {
     if (shouldScaleAvatar && !shouldReduceMotion && !hasAnimatedRef.current) {
       hasAnimatedRef.current = true
-      animate(avatarScale, [1, 1.15, 1], {
-        duration: 0.4,
-        ease: [0.215, 0.61, 0.355, 1],
+      animate(avatarScale, [1, ANIMATION.AVATAR_BOUNCE_SCALE, 1], {
+        duration: ANIMATION.DURATION_LONG,
+        ease: EASING.EASE_OUT_CUBIC,
       }).then(() => {
         hasAnimatedRef.current = false
         if (onAvatarAnimationComplete) {
@@ -153,7 +140,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
   const updatedDate = useMemo(() => formatDate(BIO_UPDATED_DATE), [formatDate])
 
   // Start social links animation after second paragraph completes with a small gap
-  const socialLinksStartDelay = SECOND_PARAGRAPH_END + 0.1
+  const socialLinksStartDelay = SECOND_PARAGRAPH_END + ANIMATION.BIO_ANIMATION_END_OFFSET
   return (
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
@@ -169,7 +156,6 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
               width={44}
               height={44}
               className="object-cover w-full h-full"
-              {...(isDesktop && { unoptimized: true })}
               priority
               onError={handleProfileError}
             />
@@ -181,10 +167,10 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
         </motion.div>
         <div className="flex flex-col gap-1.5">
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
-            <AnimatedTextByLetter text="Rian Touag" delay={0.05} />
+            <AnimatedTextByLetter text="Rian Touag" delay={ANIMATION.NAME_DELAY} />
           </p>
           <p className="text-sm font-normal leading-none text-muted-foreground">
-            <AnimatedTextByLetter text={updatedDate} delay={0.1} />
+            <AnimatedTextByLetter text={updatedDate} delay={ANIMATION.DATE_DELAY} />
           </p>
         </div>
       </div>
@@ -206,11 +192,11 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
             key={social.name}
             initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
             animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
-            whileTap={{ scale: 0.95 }}
+            whileTap={{ scale: ANIMATION.SOCIAL_LINK_TAP_SCALE }}
             transition={{
-              opacity: { duration: 0.4, delay: socialLinksStartDelay + index * 0.1, ease: [0.215, 0.61, 0.355, 1] },
-              y: { duration: 0.4, delay: socialLinksStartDelay + index * 0.1, ease: [0.215, 0.61, 0.355, 1] },
-              scale: { type: "spring", stiffness: 400, damping: 17 },
+              opacity: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: socialLinksStartDelay + index * ANIMATION.SOCIAL_LINK_STAGGER, ease: EASING.EASE_OUT_CUBIC },
+              y: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: socialLinksStartDelay + index * ANIMATION.SOCIAL_LINK_STAGGER, ease: EASING.EASE_OUT_CUBIC },
+              scale: { type: "spring", stiffness: ANIMATION.AVATAR_SCALE_ANIMATION_STIFFNESS, damping: 17 },
             }}
           >
             <Link
@@ -221,7 +207,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
               aria-label={social.name}
             >
               <span
-                className="relative z-10 h-4 w-4 icon-current-color"
+                className="relative z-10 h-4 w-4 icon-current-color transition-transform group-hover:scale-110"
                 style={{ WebkitMaskImage: `url(${social.icon})`, maskImage: `url(${social.icon})` }}
                 aria-hidden="true"
               />

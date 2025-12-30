@@ -91,3 +91,5 @@ generateBlurPlaceholders().catch((error) => {
   console.error('Error generating blur placeholders:', error);
   process.exit(1);
 });
+
+

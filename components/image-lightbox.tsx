@@ -344,15 +344,23 @@ export function ImageLightbox({
                   {images.map((_, index) => {
                     const isActive = index === currentIndex
                     return (
-                      <button
+                      <motion.button
                         key={index}
                         type="button"
                         onClick={() => onNavigate(index)}
-                        className={`h-2.5 w-2.5 rounded-full border transition-colors ${
+                        className={`h-2.5 rounded-full border transition-colors ${
                           isActive
                             ? "bg-foreground border-foreground"
                             : "bg-background/70 border-border hover:bg-foreground/40"
                         }`}
+                        animate={{
+                          width: isActive ? "1.5rem" : "0.625rem", // 24px for active, 10px for inactive
+                        }}
+                        transition={{
+                          type: "spring",
+                          stiffness: 350,
+                          damping: 22,
+                        }}
                         aria-label={`Go to image ${index + 1}`}
                         aria-current={isActive ? "true" : undefined}
                       />

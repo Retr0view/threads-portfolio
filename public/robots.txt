@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+# Disallow admin or private paths if you add them later
+# Disallow: /admin/
+# Disallow: /api/
+
+Sitemap: https://yourdomain.com/sitemap.xml
+# Update the sitemap URL above with your actual domain
+
+
+

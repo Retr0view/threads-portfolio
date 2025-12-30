@@ -1,36 +1,70 @@
-import { useState, useEffect, useCallback } from "react"
+import { useState, useEffect, useCallback, useRef } from "react"
 
 /**
  * Debounce hook for delaying function execution
+ * Returns a debounced version of the callback that delays execution until after delay milliseconds
+ * have elapsed since the last time it was invoked.
+ * 
+ * @param callback - The function to debounce
+ * @param delay - The number of milliseconds to delay
+ * @returns A debounced version of the callback
+ * 
+ * @example
+ * const debouncedSearch = useDebounce((query: string) => {
+ *   console.log(query)
+ * }, 300)
+ * 
+ * // Calling debouncedSearch multiple times quickly will only execute once after 300ms
+ * debouncedSearch("a")
+ * debouncedSearch("ab")
+ * debouncedSearch("abc") // Only this will execute after 300ms
  */
 export function useDebounce<T extends (...args: any[]) => any>(
   callback: T,
   delay: number
-): T {
-  const [debouncedCallback, setDebouncedCallback] = useState<T>(callback)
+): (...args: Parameters<T>) => void {
+  const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined)
 
   useEffect(() => {
-    const handler = setTimeout(() => {
-      setDebouncedCallback(() => callback)
-    }, delay)
-
     return () => {
-      clearTimeout(handler)
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
     }
-  }, [callback, delay])
+  }, [])
 
-  return debouncedCallback as T
+  return useCallback(
+    (...args: Parameters<T>) => {
+      if (timeoutRef.current) {
+        clearTimeout(timeoutRef.current)
+      }
+      timeoutRef.current = setTimeout(() => {
+        callback(...args)
+      }, delay)
+    },
+    [callback, delay]
+  )
 }
 
 /**
  * Hook to check if viewport is desktop size (>= 1024px)
+ * Automatically updates when window is resized (debounced to avoid excessive updates)
+ * 
+ * @returns {boolean} True if viewport width is >= 1024px, false otherwise
+ * 
+ * @example
+ * const isDesktop = useIsDesktop()
+ * 
+ * if (isDesktop) {
+ *   // Desktop-specific logic
+ * }
  */
 export function useIsDesktop(): boolean {
   const [isDesktop, setIsDesktop] = useState(false)
 
   useEffect(() => {
     const checkDesktop = () => {
-      setIsDesktop(window.innerWidth >= 1024)
+      setIsDesktop(window.innerWidth >= 1024) // Using BREAKPOINTS.DESKTOP would require importing, keeping inline for now
     }
 
     // Check immediately
@@ -55,6 +89,17 @@ export function useIsDesktop(): boolean {
 
 /**
  * Hook to check if viewport matches a breakpoint
+ * Automatically updates when window is resized (debounced to avoid excessive updates)
+ * 
+ * @param {number} breakpoint - The breakpoint width in pixels to check against
+ * @returns {boolean} True if viewport width is >= breakpoint, false otherwise
+ * 
+ * @example
+ * const isMobile = useBreakpoint(620)
+ * 
+ * if (isMobile) {
+ *   // Mobile-specific logic
+ * }
  */
 export function useBreakpoint(breakpoint: number): boolean {
   const [matches, setMatches] = useState(false)
@@ -83,3 +128,4 @@ export function useBreakpoint(breakpoint: number): boolean {
 
   return matches
 }
+
