@@ -8,7 +8,7 @@ export const siteConfig = {
   title: "Rian Touag - Senior Product Designer",
   description: "Senior product designer with an engineer's eye. Making things that work the way people expect them to.",
   url: process.env.NEXT_PUBLIC_SITE_URL || "https://riantouag.com", // Update with actual domain
-  ogImage: "/og-assets/OG image.jpg", // Recommended: 1200x630px
+  ogImage: "/og-assets/og-image.jpg", // Recommended: 1200x630px
   twitterHandle: "@RianTouag",
   keywords: [
     "product design",
