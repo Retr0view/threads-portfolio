@@ -29,6 +29,9 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
   const isDragging = useRef(false)
   const dragStartTime = useRef(0)
   const dragStartX = useRef(0)
+  const lightboxOpenedAtRef = useRef<number | null>(null)
+  const lightboxOpenedImageIndexRef = useRef<number | null>(null)
+  const lightboxCurrentIndexRef = useRef(0)
   const preloadLinksRef = useRef<HTMLLinkElement[]>([])
   const preloadTimeoutsRef = useRef<NodeJS.Timeout[]>([])
 
@@ -340,9 +343,12 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
         setLightboxOpen(true)
       })
 
+      lightboxOpenedAtRef.current = Date.now()
+      lightboxOpenedImageIndexRef.current = index
       window.visitors?.track("Lightbox Open", {
         project: projectName ?? "Unknown",
         imageIndex: index,
+        imageNumber: index + 1,
       })
     }
   }, [isDesktop, images, imageFolder, preloadLightboxImage, projectName])
@@ -358,8 +364,31 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
   }, [])
 
   // Memoize lightbox handlers
-  const handleLightboxClose = useCallback(() => setLightboxOpen(false), [])
+  const handleLightboxClose = useCallback(() => {
+    const openedAt = lightboxOpenedAtRef.current
+    const openedImageIndex = lightboxOpenedImageIndexRef.current
+    const closedOnImageIndex = lightboxCurrentIndexRef.current
+    if (openedAt !== null) {
+      const durationSeconds = Math.round((Date.now() - openedAt) / 1000)
+      window.visitors?.track("Lightbox View", {
+        project: projectName ?? "Unknown",
+        durationSeconds,
+        openedImageIndex: openedImageIndex ?? 0,
+        openedImageNumber: (openedImageIndex ?? 0) + 1,
+        closedOnImageIndex,
+        closedOnImageNumber: closedOnImageIndex + 1,
+      })
+      lightboxOpenedAtRef.current = null
+      lightboxOpenedImageIndexRef.current = null
+    }
+    setLightboxOpen(false)
+  }, [projectName])
   const handleLightboxNavigate = useCallback((index: number) => setLightboxIndex(index), [])
+
+  // Keep ref in sync so close handler has current index (avoids stale closure)
+  useEffect(() => {
+    lightboxCurrentIndexRef.current = lightboxIndex
+  }, [lightboxIndex])
 
   const dragConstraints = useMemo(() => width > 0 ? { left: -width, right: 0 } : undefined, [width])
 
