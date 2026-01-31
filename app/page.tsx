@@ -1,14 +1,14 @@
 "use client"
 
-import Link from "next/link"
-import { motion, useMotionValue, animate, useReducedMotion } from "framer-motion"
-import { useEffect, useRef, useMemo, useCallback, useState } from "react"
-import { IntroSection, BIO_ANIMATION_END } from "@/components/intro-section"
-import { WorkGroup } from "@/components/work-group"
-import { workGroups } from "@/lib/work-groups"
+import { BIO_ANIMATION_END, IntroSection } from "@/components/intro-section"
 import { useLenis } from "@/components/smooth-scroll"
+import { WorkGroup } from "@/components/work-group"
 import { ANIMATION, EASING } from "@/lib/constants"
 import { useScrollToTop } from "@/lib/hooks/use-scroll-to-top"
+import { workGroups } from "@/lib/work-groups"
+import { motion, useMotionValue, useReducedMotion } from "framer-motion"
+import Link from "next/link"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 
 // Memoize work groups rendering with pre-calculated delays
 function MemoizedWorkGroups({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
@@ -152,6 +152,7 @@ export default function Home() {
               href="#top"
               onClick={handleBackToTopClick}
               className="flex h-9 items-center justify-center rounded-[22px] bg-muted px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+              data-visitors-event="Back to top"
             >
               Back to the top
             </Link>

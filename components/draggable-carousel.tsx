@@ -1,19 +1,20 @@
 "use client"
 
-import React, { useRef, useState, useEffect, useCallback, useMemo } from "react"
+import { ANIMATION, BREAKPOINTS, EASING, IMAGE_ASPECT_RATIO, PRELOAD } from "@/lib/constants"
+import { useBreakpoint } from "@/lib/hooks"
+import { normalizeImagePath } from "@/lib/image-utils"
 import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ImageLightbox } from "./image-lightbox"
-import { useBreakpoint } from "@/lib/hooks"
-import { BREAKPOINTS, ANIMATION, EASING, IMAGE_ASPECT_RATIO, PRELOAD } from "@/lib/constants"
-import { normalizeImagePath } from "@/lib/image-utils"
 
 interface DraggableCarouselProps {
   images: string[]
   imageFolder: string
+  projectName?: string
 }
 
-function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselProps) {
+function DraggableCarouselComponent({ images, imageFolder, projectName }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
   const isDesktop = useBreakpoint(BREAKPOINTS.MOBILE)
@@ -338,8 +339,13 @@ function DraggableCarouselComponent({ images, imageFolder }: DraggableCarouselPr
       requestAnimationFrame(() => {
         setLightboxOpen(true)
       })
+
+      window.visitors?.track("Lightbox Open", {
+        project: projectName ?? "Unknown",
+        imageIndex: index,
+      })
     }
-  }, [isDesktop, images, imageFolder, preloadLightboxImage])
+  }, [isDesktop, images, imageFolder, preloadLightboxImage, projectName])
 
   // Memoize hover handlers
   const handleMouseEnter = useCallback(() => setIsHovering(true), [])

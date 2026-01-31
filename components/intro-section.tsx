@@ -1,13 +1,13 @@
 "use client"
 
-import { Image } from "@unpic/react/nextjs"
-import Link from "next/link"
-import { useState, useCallback, useMemo, useEffect, useRef } from "react"
-import { motion, useReducedMotion, useMotionValue, animate } from "framer-motion"
-import lastCommitDateData from "@/lib/last-commit-date.json"
-import { useIsDesktop } from "@/lib/hooks"
-import { socialLinks } from "@/lib/site-config"
 import { ANIMATION, EASING } from "@/lib/constants"
+import { useIsDesktop } from "@/lib/hooks"
+import lastCommitDateData from "@/lib/last-commit-date.json"
+import { socialLinks } from "@/lib/site-config"
+import { Image } from "@unpic/react/nextjs"
+import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion"
+import Link from "next/link"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 // Bio text - date from last git commit
 const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
@@ -205,6 +205,8 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
               rel="noopener noreferrer"
               className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-muted px-4 text-muted-foreground transition-colors hover:text-foreground before:absolute before:inset-0 before:rounded-[22px] before:bg-foreground/[0.03] before:opacity-0 before:transition-opacity hover:before:opacity-100"
               aria-label={social.name}
+              data-visitors-event="Social Click"
+              data-visitors-platform={social.name}
             >
               <span
                 className="relative z-10 h-4 w-4 icon-current-color transition-transform group-hover:scale-110"

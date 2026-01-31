@@ -1,9 +1,9 @@
 "use client"
 
-import React, { useState, useCallback } from "react"
-import Image from "next/image"
-import { DraggableCarousel } from "./draggable-carousel"
 import { WorkGroup as WorkGroupType } from "@/lib/work-groups"
+import Image from "next/image"
+import React, { useCallback, useState } from "react"
+import { DraggableCarousel } from "./draggable-carousel"
 
 interface WorkGroupProps {
   workGroup: WorkGroupType
@@ -56,6 +56,7 @@ function WorkGroupComponent({ workGroup }: WorkGroupProps) {
         <DraggableCarousel
           images={carouselImages}
           imageFolder={workGroup.imageFolder}
+          projectName={workGroup.name}
         />
       </div>
   )
