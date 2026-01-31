@@ -1,10 +1,11 @@
+import { SmoothScroll } from "@/components/smooth-scroll"
+import { ThemeInit } from "@/components/theme-init"
+import { ThemeProvider } from "@/components/theme-provider"
+import { siteConfig, socialLinks } from "@/lib/site-config"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
+import Script from "next/script"
 import "./globals.css"
-import { SmoothScroll } from "@/components/smooth-scroll"
-import { ThemeProvider } from "@/components/theme-provider"
-import { ThemeInit } from "@/components/theme-init"
-import { siteConfig, socialLinks } from "@/lib/site-config"
 
 const openRunde = localFont({
   src: [
@@ -191,6 +192,11 @@ export default function RootLayout({
         />
       </head>
       <body className={`${openRunde.className} overflow-x-hidden`}>
+        <Script
+          src="https://cdn.visitors.now/v.js"
+          data-token="25fd95ec-04ca-402c-b0e4-50594cac1d4e"
+          strategy="afterInteractive"
+        />
         <ThemeInit />
         <ThemeProvider
           attribute="class"
