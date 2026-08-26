@@ -1,104 +1,50 @@
 "use client"
 
 import { ANIMATION, EASING } from "@/lib/constants"
-import { useIsDesktop } from "@/lib/hooks"
+import { useSplitLines } from "@/lib/hooks/use-split-lines"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 import { socialLinks } from "@/lib/site-config"
 import { Image } from "@unpic/react/nextjs"
 import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { TextMorph } from "torph/react"
 
-// Bio text - date from last git commit
+// The tracked date is an explicit portfolio content revision, not a build timestamp.
 const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
 
 const bioText = {
-  first: "Senior product designer with an engineer's eye. Making things that work the way people expect them to.",
-  second: "From concept through launch and beyond, I work with founders and startups. To focus on what matters: designs that work, feel right, and don't get in the way. Every detail serves the experience, not the other way around.",
+  first: "I design in code, working through the details until the product works the way people expect it to.",
+  second: "I’m a senior product designer with an engineer’s eye. I work with founders and startups from the first rough idea through launch and whatever comes next.",
+  third: "I care deeply about craft. The small decisions, the edge cases, the moments nobody notices unless they feel wrong. Every detail should make the experience better, then get out of the way.",
 }
-
-// Calculate when a paragraph animation ends
-const getAnimationEndTime = (text: string, startDelay: number) => {
-  const wordCount = text.split(" ").length
-  return startDelay + (wordCount - 1) * ANIMATION.WORD_STAGGER + ANIMATION.WORD_DURATION
-}
-
-// Paragraph timing (starts after avatar/name section animation completes ~0.3s)
-const FIRST_PARAGRAPH_START = ANIMATION.FIRST_PARAGRAPH_START
-const FIRST_PARAGRAPH_END = getAnimationEndTime(bioText.first, FIRST_PARAGRAPH_START)
-const SECOND_PARAGRAPH_START = FIRST_PARAGRAPH_END + ANIMATION.PARAGRAPH_GAP
-const SECOND_PARAGRAPH_END = getAnimationEndTime(bioText.second, SECOND_PARAGRAPH_START)
 
 // Export for use in page.tsx (work groups start after bio text completes)
-export const BIO_ANIMATION_END = SECOND_PARAGRAPH_END + ANIMATION.BIO_ANIMATION_END_OFFSET
+export const BIO_ANIMATION_END = ANIMATION.INTRO_PARAGRAPH_ANIMATION_END_S
 
-// Component for letter-by-letter animation
-function AnimatedTextByLetter({ text, delay = 0 }: { text: string; delay?: number }) {
-  const shouldReduceMotion = useReducedMotion()
-  const letters = text.split("")
-
-  if (shouldReduceMotion) {
-    return <span>{text}</span>
-  }
-
-  return (
-    <>
-      {letters.map((letter, index) => (
-        <motion.span
-          key={`${letter}-${index}`}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: ANIMATION.LETTER_DURATION,
-            delay: delay + index * ANIMATION.LETTER_STAGGER,
-            ease: EASING.EASE_OUT_CUBIC,
-          }}
-          style={{ display: "inline-block" }}
-        >
-          {letter === " " ? "\u00A0" : letter}
-        </motion.span>
-      ))}
-    </>
-  )
-}
-
-// Component for word-by-word animation
-function AnimatedText({ text, delay = 0 }: { text: string; delay?: number }) {
-  const shouldReduceMotion = useReducedMotion()
-  const words = text.split(" ")
-
-  if (shouldReduceMotion) {
-    return <span>{text}</span>
-  }
-
-  return (
-    <>
-      {words.map((word, index) => (
-        <motion.span
-          key={`${word}-${index}`}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{
-            duration: ANIMATION.WORD_DURATION,
-            delay: delay + index * ANIMATION.WORD_STAGGER,
-            ease: EASING.EASE_OUT_CUBIC,
-          }}
-          style={{ display: "inline-block" }}
-        >
-          {word}
-          {index < words.length - 1 && "\u00A0"}
-        </motion.span>
-      ))}
-    </>
-  )
-}
+// CSS easing string for torph (matches EASE_OUT_CUBIC)
+const TORPH_EASE = "cubic-bezier(0.215, 0.61, 0.355, 1)"
 
 export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: { shouldScaleAvatar?: boolean; onAvatarAnimationComplete?: () => void }) {
   const [profileError, setProfileError] = useState(false)
-  const isDesktop = useIsDesktop()
   const shouldReduceMotion = useReducedMotion()
   const avatarScale = useMotionValue(shouldReduceMotion ? 1 : ANIMATION.AVATAR_INITIAL_SCALE)
   const hasAnimatedRef = useRef(false)
+
+  const firstParagraphRef = useRef<HTMLParagraphElement>(null)
+  const secondParagraphRef = useRef<HTMLParagraphElement>(null)
+  const thirdParagraphRef = useRef<HTMLParagraphElement>(null)
+  useSplitLines(firstParagraphRef, { baseDelayMs: 0 })
+  useSplitLines(secondParagraphRef, {
+    baseDelayMs: ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS,
+  })
+  useSplitLines(thirdParagraphRef, {
+    baseDelayMs: ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS,
+  })
+
+  // Text morph state – name/date
+  const [nameText, setNameText] = useState("")
+  const [dateText, setDateText] = useState("")
 
   const handleProfileError = useCallback(() => setProfileError(true), [])
 
@@ -139,8 +85,23 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
   // Memoize date formatting
   const updatedDate = useMemo(() => formatDate(BIO_UPDATED_DATE), [formatDate])
 
-  // Start social links animation after second paragraph completes with a small gap
-  const socialLinksStartDelay = SECOND_PARAGRAPH_END + ANIMATION.BIO_ANIMATION_END_OFFSET
+  // Staggered text morph (torph): name/date
+  useEffect(() => {
+    if (shouldReduceMotion) {
+      return
+    }
+
+    const timeouts: number[] = []
+    timeouts.push(window.setTimeout(() => setNameText("Rian Touag"), ANIMATION.NAME_DELAY * 1000))
+    timeouts.push(window.setTimeout(() => setDateText(updatedDate), ANIMATION.DATE_DELAY * 1000))
+    return () => timeouts.forEach((id) => window.clearTimeout(id))
+  }, [shouldReduceMotion, updatedDate])
+
+  const displayedNameText = shouldReduceMotion ? "Rian Touag" : nameText
+  const displayedDateText = shouldReduceMotion ? updatedDate : dateText
+
+  // Start social links animation after intro paragraph animation completes
+  const socialLinksStartDelay = BIO_ANIMATION_END
   return (
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
@@ -167,21 +128,54 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
         </motion.div>
         <div className="flex flex-col gap-1.5">
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
-            <AnimatedTextByLetter text="Rian Touag" delay={ANIMATION.NAME_DELAY} />
+            <TextMorph
+              duration={500}
+              ease={TORPH_EASE}
+              as="span"
+              className="inline"
+            >
+              {displayedNameText || "\u00A0"}
+            </TextMorph>
           </p>
           <p className="text-sm font-normal leading-none text-muted-foreground">
-            <AnimatedTextByLetter text={updatedDate} delay={ANIMATION.DATE_DELAY} />
+            <TextMorph
+              duration={400}
+              ease={TORPH_EASE}
+              as="span"
+              className="inline"
+            >
+              {displayedDateText || "\u00A0"}
+            </TextMorph>
           </p>
         </div>
       </div>
 
-      {/* Bio Text */}
-      <div className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
-        <p>
-          <AnimatedText text={bioText.first} delay={FIRST_PARAGRAPH_START} />
+      {/* Bio Text – per-line animation once on load; resize re-splits, no replay */}
+      <div className="intro-paragraphs flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
+        <p ref={firstParagraphRef} className="intro-paragraph-lines">
+          {bioText.first}
         </p>
-        <p>
-          <AnimatedText text={bioText.second} delay={SECOND_PARAGRAPH_START} />
+        <p
+          ref={secondParagraphRef}
+          className="intro-paragraph-lines intro-paragraph-lines--second"
+          style={
+            {
+              "--line-base-delay": `${ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS}ms`,
+            } as React.CSSProperties
+          }
+        >
+          {bioText.second}
+        </p>
+        <p
+          ref={thirdParagraphRef}
+          className="intro-paragraph-lines intro-paragraph-lines--third"
+          style={
+            {
+              "--line-base-delay": `${ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS}ms`,
+            } as React.CSSProperties
+          }
+        >
+          {bioText.third}
         </p>
       </div>
 
@@ -205,8 +199,6 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
               rel="noopener noreferrer"
               className="group relative flex h-9 items-center justify-center gap-2 rounded-[22px] bg-muted px-4 text-muted-foreground transition-colors hover:text-foreground before:absolute before:inset-0 before:rounded-[22px] before:bg-foreground/[0.03] before:opacity-0 before:transition-opacity hover:before:opacity-100"
               aria-label={social.name}
-              data-visitors-event="Social Click"
-              data-visitors-platform={social.name}
             >
               <span
                 className="relative z-10 h-4 w-4 icon-current-color transition-transform group-hover:scale-110"
@@ -223,4 +215,3 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
     </div>
   )
 }
-

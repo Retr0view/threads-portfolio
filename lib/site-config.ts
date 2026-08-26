@@ -6,8 +6,9 @@
 export const siteConfig = {
   name: "Rian Touag",
   title: "Rian Touag - Senior Product Designer",
-  description: "Senior product designer with an engineer's eye. Making things that work the way people expect them to.",
-  url: process.env.NEXT_PUBLIC_SITE_URL || "https://riantouag.com", // Update with actual domain
+  // Concise public metadata; the long-form page bio lives in IntroSection.
+  description: "Senior product designer who designs in code with founders and startups, from early ideas through launch, with an engineer's eye and a focus on craft.",
+  url: process.env.NEXT_PUBLIC_SITE_URL || "https://riantouag.com",
   ogImage: "/og-assets/og-image.jpg", // Recommended: 1200x630px
   twitterHandle: "@RianTouag",
   keywords: [
@@ -36,6 +37,4 @@ export const socialLinks = [
   { name: "Telegram", icon: "/icons/Telegram.svg", url: "https://t.me/Coinlandingpage" },
   { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
 ] as const
-
-
 

@@ -1,190 +1,117 @@
-# Portfolio Site
+# Portfolio site
 
-A modern portfolio site built with Next.js, TypeScript, Tailwind CSS, shadcn/ui, and framer-motion.
+This repository contains Rian Touag's portfolio. It is a Next.js App Router application with TypeScript, React, Tailwind CSS, Framer Motion, Lenis, and `next/image`.
 
-## Getting Started
+## Run the site locally
 
-First, install the dependencies:
-
-```bash
-npm install
-```
-
-Then, run the development server:
+Use Node.js 24 to match the continuous-integration workflow. Install the locked dependency tree, then start the development server:
 
 ```bash
+npm ci
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000). Development and production builds read tracked content artifacts. They do not regenerate those files or change the visible content revision.
 
-## Tech Stack
+## Command reference
 
-- **Next.js 16+** - React framework with App Router
-- **TypeScript** - Type safety
-- **Tailwind CSS** - Utility-first CSS framework
-- **shadcn/ui** - Component library
-- **framer-motion** - Animation library
-- **Lenis** - Smooth scrolling
-- **next-themes** - Theme management
+Run these commands from the repository root.
 
-## Project Structure
+| Command | Purpose |
+| --- | --- |
+| `npm run check` | Run TypeScript, ESLint, the deterministic date-script fixture, and the unit suite. |
+| `npm run test` | Run the Vitest unit suite. |
+| `npm run test:e2e` | Build the production application and run the Playwright suite in Chromium and WebKit. |
+| `npm run build` | Create a production build without rewriting tracked content files. |
+| `npm run validate-content` | Validate the project manifest, public assets, and exact blur-placeholder coverage. |
+| `npm run generate-blur` | Regenerate tracked blur data after a portfolio image change. It writes only when output changes. |
+| `npm run update-content-date -- --date YYYY-MM-DD` | Record an intentional portfolio content revision. Supply a real calendar date. |
+| `npm run typecheck` | Run the TypeScript checker without incremental output. |
+| `npm run lint` | Run ESLint across the repository. |
+| `npm ls --depth=0` | Inspect the installed top-level dependency tree. |
 
+`npm run check` is the normal local and CI gate. Content changes also need `npm run validate-content`. Interaction or image-loading changes need `npm run test:e2e`.
+
+## Source layout
+
+```text
+app/
+  layout.tsx                     Root metadata and application providers
+  page.tsx                       Home-page composition and image-priority choice
+  manifest.ts                    Web app manifest route
+  robots.ts                      Crawler rules route
+  sitemap.ts                     Sitemap route
+components/
+  draggable-carousel.tsx         Responsive gallery and lightbox opener
+  image-lightbox.tsx             Modal viewer, image loading, and navigation
+  intro-section.tsx              Profile, biography, and intro timing
+  work-group.tsx                 Project header and gallery boundary
+lib/
+  project-image-manifest.json    Project and image content source
+  project-image-manifest.js      Runtime-neutral manifest validation
+  work-groups.ts                 Typed UI projection of the manifest
+  image-blur-data.json           Tracked generated blur placeholders
+  last-commit-date.json          Tracked content revision
+  site-config.ts                 Canonical public identity and social links
+scripts/
+  validate-content.js            Repository content validation entry point
+  generate-blur-placeholders.js  Blur-data generator
+  get-last-commit-date.js        Explicit content-date updater and fixture
+tests/
+  unit/                          Vitest component and utility coverage
+  e2e/                           Playwright production-browser coverage
 ```
-├── app/                    # Next.js App Router pages
-│   ├── layout.tsx         # Root layout with metadata and providers
-│   ├── page.tsx           # Home page
-│   ├── error.tsx          # Error boundary
-│   └── sitemap.ts         # Dynamic sitemap generation
-├── components/             # React components
-│   ├── draggable-carousel.tsx  # Image carousel with drag support
-│   ├── image-lightbox.tsx      # Full-screen image lightbox
-│   ├── intro-section.tsx       # Hero section with animations
-│   ├── smooth-scroll.tsx      # Lenis smooth scroll provider
-│   ├── theme-provider.tsx      # Theme management
-│   └── work-group.tsx          # Work portfolio item
-├── lib/                    # Utility functions and constants
-│   ├── constants.ts       # Animation timing and breakpoint constants
-│   ├── hooks.ts           # Custom React hooks
-│   ├── image-utils.ts     # Image path normalization
-│   ├── image-lightbox-utils.ts  # Lightbox utility functions
-│   ├── site-config.ts     # Site configuration and metadata
-│   └── work-groups.ts     # Portfolio work data
-├── public/                 # Static assets
-│   ├── icons/             # Social media icons
-│   ├── images/            # Portfolio images
-│   ├── logos/             # Company logos
-│   ├── profile/           # Profile images
-│   ├── robots.txt         # SEO crawler directives
-│   └── manifest.json      # PWA manifest
-└── scripts/                # Build scripts
-    ├── generate-blur-placeholders.js  # Generate image blur data
-    └── get-last-commit-date.js        # Get last commit date for bio
-```
 
-## Animation Timing System
+## Update portfolio content
 
-The site uses a carefully orchestrated animation system with precise timing:
+`lib/project-image-manifest.json` is the only project and gallery manifest. Each entry owns its project ID, copy, logo path, image folder, ordered image filenames, and optional fallback. `lib/work-groups.ts` derives the UI data from the validated manifest. The blur generator reads the same source.
 
-### Intro Section Animations
-- **Letter-by-letter**: Name and date animate letter-by-letter with 8ms stagger
-- **Word-by-word**: Bio paragraphs animate word-by-word with 11ms stagger
-- **Social links**: Stagger with 100ms delay between each link
+When adding, removing, renaming, or replacing a project image:
 
-### Work Groups
-- **Stagger delay**: 120ms between each work group
-- **Duration**: 300ms per work group animation
-- **Dividers**: Animate 100ms after each work group completes
+1. Update `lib/project-image-manifest.json` and the matching asset under `public/`.
+2. Run `npm run generate-blur`. The generator validates the manifest and source assets before refreshing `lib/image-blur-data.json`.
+3. Run `npm run validate-content` to prove the final manifest, assets, and exact blur coverage agree.
+4. Update the tracked content date with `npm run update-content-date -- --date YYYY-MM-DD`.
+5. Run `npm run check` and `npm run build` before committing the changed content and generated files together.
 
-### Constants
-All animation timing values are centralized in `lib/constants.ts` for easy adjustment:
-- `ANIMATION.WORD_STAGGER` - Delay between words (0.011s)
-- `ANIMATION.WORK_GROUP_STAGGER` - Delay between work groups (0.12s)
-- `ANIMATION.WORK_GROUP_DURATION` - Work group animation duration (0.3s)
+The date shown as `Updated` is the portfolio content revision, not a build or deployment timestamp. Calling the date command without `--date` derives the latest Git commit date. It requires Git metadata and fails if that metadata is unavailable; it never substitutes the current day.
 
-## Image Optimization Workflow
+## Public metadata
 
-### Blur Placeholders
-Blur placeholders are automatically generated for all portfolio images:
+`lib/site-config.ts` owns the canonical site URL, title, concise public description, social image, language, and social links. `app/layout.tsx` consumes it for standard metadata, Open Graph, Twitter cards, canonical links, icons, and JSON-LD. The typed App Router files expose:
 
-1. **Pre-build**: The `prebuild` script runs `generate-blur-placeholders.js`
-2. **Generation**: Uses `plaiceholder` to create base64 blur data
-3. **Storage**: Blur data is stored in `lib/image-blur-data.json`
-4. **Usage**: Images use blur placeholders while loading
+- `/manifest.webmanifest` from `app/manifest.ts`
+- `/robots.txt` from `app/robots.ts`
+- `/sitemap.xml` from `app/sitemap.ts`
 
-### Image Paths
-All image paths are normalized using `normalizeImagePath()` from `lib/image-utils.ts`:
-- Ensures consistent path handling
-- Supports both absolute (`/path/to/image.jpg`) and relative (`image.jpg`) paths
+`app/sitemap.ts` uses `lib/last-commit-date.json`, so rebuilding unchanged content does not publish a new revision date. `NEXT_PUBLIC_SITE_URL` may override the canonical URL for a deployment. `NEXT_PUBLIC_GOOGLE_VERIFICATION` is optional.
 
-### Optimization
-- Next.js Image component with automatic optimization
-- AVIF and WebP format support
-- Responsive image sizes for different devices
-- Lazy loading for below-the-fold images
+## Intro animation
 
-## Development Guidelines
+The biography contains three paragraphs. `useSplitLines` measures their browser-wrapped visual lines and animates each paragraph once. Font readiness and resize events trigger a fresh measurement without replaying a completed entrance. Reduced-motion users receive the completed state immediately.
 
-### Code Organization
-- **Constants**: All magic numbers should be in `lib/constants.ts`
-- **Utilities**: Reusable functions in `lib/` with JSDoc comments
-- **Hooks**: Custom hooks in `lib/hooks.ts` or `lib/hooks/` directory
-- **Components**: Keep components focused and under 300 lines when possible
+The overall sequence is coordinated through symbols in `lib/constants.ts` and `BIO_ANIMATION_END` in `components/intro-section.tsx`. See [LOADING_ANIMATION_TIMELINE.md](LOADING_ANIMATION_TIMELINE.md) for ownership and sequencing details.
 
-### TypeScript
-- Strict mode enabled
-- All functions should have proper type annotations
-- Use branded types for IDs when beneficial
+## Gallery and lightbox
 
-### Accessibility
-- All interactive elements have visible focus indicators
-- Keyboard navigation supported throughout
-- Skip-to-content link for keyboard users
-- Respects `prefers-reduced-motion`
+The page chooses one measured portfolio LCP image for initial preload. Other carousel images remain lazy. Desktop hover, focus, open, and lightbox navigation request optimized current and adjacent images without fetching every original on idle.
 
-### Performance
-- Memoize expensive computations with `useMemo`
-- Use `useCallback` for event handlers passed to children
-- Lazy load images below the fold
-- Preload critical images
+At the desktop breakpoint, each image is a named button that opens a modal dialog. The dialog traps keyboard focus, restores focus to its exact opener, supports keyboard and pointer navigation, preserves the prior body-overflow value, and keeps controls available after an image failure. On mobile, the carousel remains draggable but its images do not become buttons or open the lightbox.
 
-## Deployment
+See [IMAGE_LIGHTBOX_DOC.md](IMAGE_LIGHTBOX_DOC.md) for the complete interaction, preload, reduced-motion, and error-state contracts.
 
-### Vercel
-This project is configured for deployment on Vercel:
+## Targeted diagnostics
 
-1. Connect your repository to Vercel
-2. Vercel will automatically detect Next.js
-3. Build will run `prebuild` scripts automatically
-4. Environment variables can be set in Vercel dashboard
+Do not delete the lockfile, dependency tree, or build output as a first response to a failure. Start with the smallest command that owns the failing boundary:
 
-### Environment Variables
-- `NEXT_PUBLIC_SITE_URL` - Your site's URL (for SEO metadata)
+- Dependency installation: inspect `npm ci` output, then run `npm ls --depth=0`.
+- Type diagnostics: run `npm run typecheck`.
+- Lint diagnostics: run `npm run lint`.
+- Unit failures: run `npm run test` and use Vitest's reported test path.
+- Browser failures: run `npm run test:e2e` and inspect the Playwright trace named in its output.
+- Content failures: run `npm run validate-content`; its messages identify the invalid manifest field, project asset, or blur key.
+- Production failures: run `npm run check`, then `npm run build` and address the first reported error.
 
-### Pre-build Scripts
-Before building, the following scripts run automatically:
-- `generate-blur-placeholders.js` - Creates blur data for images
-- `get-last-commit-date.js` - Updates bio "last updated" date
+## Historical maintenance records
 
-## Troubleshooting
-
-### Images Not Loading
-- Check that images exist in `public/images/` directory
-- Verify image paths in `lib/work-groups.ts`
-- Run `npm run prebuild` to regenerate blur placeholders
-
-### Animation Issues
-- Check `prefers-reduced-motion` settings in browser
-- Verify constants in `lib/constants.ts` are correct
-- Ensure Framer Motion is properly installed
-
-### Build Errors
-- Clear `.next` directory: `rm -rf .next`
-- Clear `node_modules`: `rm -rf node_modules && npm install`
-- Check TypeScript errors: `npm run lint`
-
-## Design Workflow
-
-The design is created in Figma and can be fine-tuned using Figma MCP for implementation.
-
-## Additional Resources
-
-- [Next.js Documentation](https://nextjs.org/docs)
-- [Framer Motion Documentation](https://www.framer.com/motion/)
-- [Tailwind CSS Documentation](https://tailwindcss.com/docs)
-- [Lenis Smooth Scroll](https://github.com/studio-freight/lenis)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+`CODEBASE_REVIEW.md` is an archive marker for the review that preceded the current maintenance plans. [plans/README.md](plans/README.md) is the implementation record and status index for that work.

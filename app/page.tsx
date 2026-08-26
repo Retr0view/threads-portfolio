@@ -10,6 +10,8 @@ import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 
+const PORTFOLIO_LCP_WORK_GROUP_ID = "neutron-rebrand"
+
 // Memoize work groups rendering with pre-calculated delays
 function MemoizedWorkGroups({ shouldReduceMotion }: { shouldReduceMotion: boolean }) {
   // Pre-calculate all animation delays
@@ -37,7 +39,10 @@ function MemoizedWorkGroups({ shouldReduceMotion }: { shouldReduceMotion: boolea
             delay: workGroupDelay
           }}
         >
-          <WorkGroup workGroup={workGroup} />
+          <WorkGroup
+            workGroup={workGroup}
+            preloadFirstImage={workGroup.id === PORTFOLIO_LCP_WORK_GROUP_ID}
+          />
         </motion.div>
       )
 
@@ -152,7 +157,6 @@ export default function Home() {
               href="#top"
               onClick={handleBackToTopClick}
               className="flex h-9 items-center justify-center rounded-[22px] bg-muted px-4 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
-              data-visitors-event="Back to top"
             >
               Back to the top
             </Link>
@@ -162,4 +166,3 @@ export default function Home() {
     </main>
   )
 }
-

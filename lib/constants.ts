@@ -16,12 +16,22 @@ export const ANIMATION = {
   DURATION_MEDIUM: 0.3,
   DURATION_LONG: 0.4,
   
-  // Intro section - word animation
+  // Intro section - word animation (legacy / fallback)
   WORD_STAGGER: 0.02,
   WORD_DURATION: 0.2,
   PARAGRAPH_GAP: 0.12,
   FIRST_PARAGRAPH_START: 0.25,
   BIO_ANIMATION_END_OFFSET: 0.1,
+
+  // Intro section - per-line animation (once on load; resize re-splits, no replay)
+  INTRO_LINE_STAGGER_MS: 60,
+  INTRO_LINE_DURATION_MS: 500,
+  /** Delay (ms) before second paragraph's first line animates. */
+  INTRO_SECOND_PARA_LINE_BASE_DELAY_MS: 700,
+  /** Delay (ms) before third paragraph's first line animates. */
+  INTRO_THIRD_PARA_LINE_BASE_DELAY_MS: 1400,
+  /** When intro line animation is considered done for work group/social timing (s). */
+  INTRO_PARAGRAPH_ANIMATION_END_S: 1.4 + 0.5 + 0.3,
   
   // Intro section - letter animation
   LETTER_STAGGER: 0.008,
@@ -79,12 +89,3 @@ export const EASING = {
 export const IMAGE_ASPECT_RATIO = {
   CAROUSEL: "348/196",
 } as const
-
-// Preload timeouts (in milliseconds)
-export const PRELOAD = {
-  LIGHTBOX_IMAGE_TIMEOUT: 5000,
-  ALL_IMAGES_TIMEOUT: 10000,
-  IDLE_CALLBACK_TIMEOUT: 2000,
-  FALLBACK_DELAY: 1000,
-} as const
-

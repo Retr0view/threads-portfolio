@@ -4,7 +4,6 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { siteConfig, socialLinks } from "@/lib/site-config"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
-import Script from "next/script"
 import "./globals.css"
 
 const openRunde = localFont({
@@ -97,7 +96,7 @@ export const metadata: Metadata = {
       "en-US": siteConfig.url,
     },
   },
-  manifest: "/manifest.json",
+  manifest: "/manifest.webmanifest",
   icons: {
     icon: [
       { url: "/og-assets/favicon 32.jpg", sizes: "32x32", type: "image/jpeg" },
@@ -192,11 +191,6 @@ export default function RootLayout({
         />
       </head>
       <body className={`${openRunde.className} overflow-x-hidden`}>
-        <Script
-          src="https://cdn.visitors.now/v.js"
-          data-token="25fd95ec-04ca-402c-b0e4-50594cac1d4e"
-          strategy="afterInteractive"
-        />
         <ThemeInit />
         <ThemeProvider
           attribute="class"

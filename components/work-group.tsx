@@ -7,9 +7,10 @@ import { DraggableCarousel } from "./draggable-carousel"
 
 interface WorkGroupProps {
   workGroup: WorkGroupType
+  preloadFirstImage: boolean
 }
 
-function WorkGroupComponent({ workGroup }: WorkGroupProps) {
+function WorkGroupComponent({ preloadFirstImage, workGroup }: WorkGroupProps) {
   const [logoError, setLogoError] = useState(false)
 
   const handleLogoError = useCallback(() => setLogoError(true), [])
@@ -21,7 +22,7 @@ function WorkGroupComponent({ workGroup }: WorkGroupProps) {
   )
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className="flex flex-col gap-4" data-work-group-id={workGroup.id}>
         {/* Header */}
         <div className="flex items-center gap-3.5">
           <div className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-3xl border-[1.5px] border-border bg-accent shadow-[0px_4px_12px_0px_rgba(0,0,0,0.15)] dark:shadow-none">
@@ -57,6 +58,7 @@ function WorkGroupComponent({ workGroup }: WorkGroupProps) {
           images={carouselImages}
           imageFolder={workGroup.imageFolder}
           projectName={workGroup.name}
+          preloadFirstImage={preloadFirstImage}
         />
       </div>
   )

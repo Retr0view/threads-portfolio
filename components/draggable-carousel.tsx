@@ -1,20 +1,20 @@
 "use client"
 
-import { ANIMATION, BREAKPOINTS, EASING, IMAGE_ASPECT_RATIO, PRELOAD } from "@/lib/constants"
+import { ANIMATION, BREAKPOINTS, EASING, IMAGE_ASPECT_RATIO } from "@/lib/constants"
 import { useBreakpoint } from "@/lib/hooks"
-import { normalizeImagePath } from "@/lib/image-utils"
 import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { ImageLightbox } from "./image-lightbox"
+import { ImageLightbox, preloadLightboxImages } from "./image-lightbox"
 
 interface DraggableCarouselProps {
   images: string[]
   imageFolder: string
-  projectName?: string
+  projectName: string
+  preloadFirstImage: boolean
 }
 
-function DraggableCarouselComponent({ images, imageFolder, projectName }: DraggableCarouselProps) {
+function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, projectName }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
   const [cardWidth, setCardWidth] = useState(0)
   const isDesktop = useBreakpoint(BREAKPOINTS.MOBILE)
@@ -29,11 +29,7 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
   const isDragging = useRef(false)
   const dragStartTime = useRef(0)
   const dragStartX = useRef(0)
-  const lightboxOpenedAtRef = useRef<number | null>(null)
-  const lightboxOpenedImageIndexRef = useRef<number | null>(null)
-  const lightboxCurrentIndexRef = useRef(0)
-  const preloadLinksRef = useRef<HTMLLinkElement[]>([])
-  const preloadTimeoutsRef = useRef<NodeJS.Timeout[]>([])
+  const lightboxOpenerRef = useRef<HTMLButtonElement>(null)
 
   // Update card width based on viewport (debounced via useBreakpoint)
   useEffect(() => {
@@ -44,16 +40,16 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
         setCardWidth(isMobile ? baseWidth * ANIMATION.CAROUSEL_MOBILE_CARD_WIDTH_RATIO : baseWidth)
       }
     }
-    
+
     handleResize()
-    
+
     // Debounce resize handler
     let timeoutId: NodeJS.Timeout
     const debouncedResize = () => {
       clearTimeout(timeoutId)
       timeoutId = setTimeout(handleResize, 150)
     }
-    
+
     window.addEventListener("resize", debouncedResize, { passive: true })
     return () => {
       window.removeEventListener("resize", debouncedResize)
@@ -99,35 +95,36 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
     const interaction = interactionRef.current
     if (!interaction) return
 
-    let touchStartX = 0
-    let touchStartY = 0
-    let isHorizontalSwipe = false
+    let touchStart: { x: number; y: number } | null = null
+    let touchDirection: "pending" | "horizontal" | "vertical" = "pending"
 
     const handleTouchStart = (e: TouchEvent) => {
-      touchStartX = e.touches[0].clientX
-      touchStartY = e.touches[0].clientY
-      isHorizontalSwipe = false
+      const touch = e.touches[0]
+      if (!touch) return
+      touchStart = { x: touch.clientX, y: touch.clientY }
+      touchDirection = "pending"
     }
 
     const handleTouchMove = (e: TouchEvent) => {
-      if (!touchStartX || !touchStartY) return
-      
-      const touchCurrentX = e.touches[0].clientX
-      const touchCurrentY = e.touches[0].clientY
-      const diffX = Math.abs(touchCurrentX - touchStartX)
-      const diffY = Math.abs(touchCurrentY - touchStartY)
+      const touch = e.touches[0]
+      if (!touchStart || !touch) return
 
-      // Determine if this is a horizontal swipe
-      if (diffX > diffY && diffX > 10) {
-        isHorizontalSwipe = true
+      const diffX = Math.abs(touch.clientX - touchStart.x)
+      const diffY = Math.abs(touch.clientY - touchStart.y)
+
+      if (touchDirection === "pending") {
+        if (Math.max(diffX, diffY) <= 10) return
+        touchDirection = diffX > 10 && diffX > diffY ? "horizontal" : "vertical"
+      }
+
+      if (touchDirection === "horizontal" && e.cancelable) {
         e.preventDefault()
       }
     }
 
     const handleTouchEnd = () => {
-      touchStartX = 0
-      touchStartY = 0
-      isHorizontalSwipe = false
+      touchStart = null
+      touchDirection = "pending"
     }
 
     // Prevent browser navigation gestures on wheel events (trackpad)
@@ -145,27 +142,18 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
       }
     }
 
-    // Prevent Safari gesture navigation
-    const handleGestureStart = (e: Event) => {
-      e.preventDefault()
-    }
-
     interaction.addEventListener("touchstart", handleTouchStart, { passive: false })
     interaction.addEventListener("touchmove", handleTouchMove, { passive: false })
     interaction.addEventListener("touchend", handleTouchEnd)
+    interaction.addEventListener("touchcancel", handleTouchEnd)
     interaction.addEventListener("wheel", handleWheelPrevent, { passive: false })
-    interaction.addEventListener("gesturestart", handleGestureStart)
-    interaction.addEventListener("gesturechange", handleGestureStart)
-    interaction.addEventListener("gestureend", handleGestureStart)
 
     return () => {
       interaction.removeEventListener("touchstart", handleTouchStart)
       interaction.removeEventListener("touchmove", handleTouchMove)
       interaction.removeEventListener("touchend", handleTouchEnd)
+      interaction.removeEventListener("touchcancel", handleTouchEnd)
       interaction.removeEventListener("wheel", handleWheelPrevent)
-      interaction.removeEventListener("gesturestart", handleGestureStart)
-      interaction.removeEventListener("gesturechange", handleGestureStart)
-      interaction.removeEventListener("gestureend", handleGestureStart)
     }
   }, [isHovering])
 
@@ -209,131 +197,18 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
     }
   }, [x])
 
-  // Preload lightbox image for instant loading
-  const preloadLightboxImage = useCallback((imagePath: string) => {
-    if (typeof window === "undefined") return
-    
-    // Use link rel=preload for high priority
-    const link = document.createElement("link")
-    link.rel = "preload"
-    link.as = "image"
-    link.href = imagePath
-    link.setAttribute("fetchpriority", "high")
-    document.head.appendChild(link)
-    preloadLinksRef.current.push(link)
-    
-    // Also preload using Image object for browser cache
-    const img = new window.Image()
-    img.src = imagePath
-    
-    // Clean up link after a delay (image should be cached by then)
-    const timeout = setTimeout(() => {
-      if (link.parentNode) {
-        link.parentNode.removeChild(link)
-        preloadLinksRef.current = preloadLinksRef.current.filter((l) => l !== link)
-      }
-        }, PRELOAD.LIGHTBOX_IMAGE_TIMEOUT)
-    preloadTimeoutsRef.current.push(timeout)
-  }, [])
-
-  // Preload all lightbox images after initial page load (low priority)
-  useEffect(() => {
-    if (typeof window === "undefined") return
-
-    let loadHandler: (() => void) | null = null
-    let idleCallbackId: number | null = null
-    let fallbackTimeout: NodeJS.Timeout | null = null
-
-    // Use requestIdleCallback to defer preloading until browser is idle
-    // This ensures it doesn't interfere with initial page rendering
-    const preloadAllImages = () => {
-      images.forEach((image) => {
-        const imagePath = normalizeImagePath(image, imageFolder)
-        
-        // Use low priority preload so it doesn't compete with initial page load
-        const link = document.createElement("link")
-        link.rel = "preload"
-        link.as = "image"
-        link.href = imagePath
-        link.setAttribute("fetchpriority", "low")
-        document.head.appendChild(link)
-        preloadLinksRef.current.push(link)
-        
-        // Also preload using Image object for browser cache
-        const img = new window.Image()
-        img.src = imagePath
-        
-        // Clean up link after a delay (image should be cached by then)
-        const timeout = setTimeout(() => {
-          if (link.parentNode) {
-            link.parentNode.removeChild(link)
-            preloadLinksRef.current = preloadLinksRef.current.filter((l) => l !== link)
-          }
-        }, PRELOAD.ALL_IMAGES_TIMEOUT)
-        preloadTimeoutsRef.current.push(timeout)
-      })
-    }
-
-    // Wait for page to be interactive, then use idle callback if available
-    if (document.readyState === "complete") {
-      if ("requestIdleCallback" in window) {
-        idleCallbackId = window.requestIdleCallback(preloadAllImages, { timeout: PRELOAD.IDLE_CALLBACK_TIMEOUT }) as unknown as number
-      } else {
-        // Fallback: wait a bit then preload
-        fallbackTimeout = setTimeout(preloadAllImages, PRELOAD.FALLBACK_DELAY)
-      }
-    } else {
-      loadHandler = () => {
-        if ("requestIdleCallback" in window) {
-          idleCallbackId = window.requestIdleCallback(preloadAllImages, { timeout: PRELOAD.IDLE_CALLBACK_TIMEOUT }) as unknown as number
-        } else {
-          fallbackTimeout = setTimeout(preloadAllImages, PRELOAD.FALLBACK_DELAY)
-        }
-      }
-      window.addEventListener("load", loadHandler)
-    }
-
-    // Cleanup function
-    return () => {
-      // Remove event listener if it was added
-      if (loadHandler) {
-        window.removeEventListener("load", loadHandler)
-      }
-      
-      // Cancel idle callback if it exists
-      if (idleCallbackId !== null && "cancelIdleCallback" in window) {
-        window.cancelIdleCallback(idleCallbackId)
-      }
-      
-      // Clear fallback timeout
-      if (fallbackTimeout) {
-        clearTimeout(fallbackTimeout)
-      }
-      
-      // Clean up all preload links
-      preloadLinksRef.current.forEach((link) => {
-        if (link.parentNode) {
-          link.parentNode.removeChild(link)
-        }
-      })
-      preloadLinksRef.current = []
-      
-      // Clear all timeouts
-      preloadTimeoutsRef.current.forEach((timeout) => clearTimeout(timeout))
-      preloadTimeoutsRef.current = []
-    }
+  const preloadLightboxImage = useCallback((index: number) => {
+    preloadLightboxImages(images, imageFolder, index)
   }, [images, imageFolder])
 
   // Memoize click handler with preloading
-  const handleImageClick = useCallback((e: React.MouseEvent<HTMLDivElement>, index: number) => {
-    // Only open lightbox on desktop and if not dragging
-    if (isDesktop && !isDragging.current) {
-      const image = images[index]
-      const imagePath = image.startsWith("/") ? image : `${imageFolder}/${image}`
-      
-      // Preload the image BEFORE opening lightbox
-      preloadLightboxImage(imagePath)
-      
+  const handleImageClick = useCallback((e: React.MouseEvent<HTMLButtonElement>, index: number) => {
+    // Keyboard activation has detail 0 and must not be blocked by a stale pointer-drag latch.
+    if (isDesktop && (!isDragging.current || e.detail === 0)) {
+      // Start the optimizer-backed request before rendering the lightbox.
+      preloadLightboxImage(index)
+
+      lightboxOpenerRef.current = e.currentTarget
       const rect = e.currentTarget.getBoundingClientRect()
       setClickedImageRect(rect)
       setLightboxIndex(index)
@@ -342,16 +217,8 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
       requestAnimationFrame(() => {
         setLightboxOpen(true)
       })
-
-      lightboxOpenedAtRef.current = Date.now()
-      lightboxOpenedImageIndexRef.current = index
-      window.visitors?.track("Lightbox Open", {
-        project: projectName ?? "Unknown",
-        imageIndex: index,
-        imageNumber: index + 1,
-      })
     }
-  }, [isDesktop, images, imageFolder, preloadLightboxImage, projectName])
+  }, [isDesktop, preloadLightboxImage])
 
   // Memoize hover handlers
   const handleMouseEnter = useCallback(() => setIsHovering(true), [])
@@ -365,30 +232,9 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
 
   // Memoize lightbox handlers
   const handleLightboxClose = useCallback(() => {
-    const openedAt = lightboxOpenedAtRef.current
-    const openedImageIndex = lightboxOpenedImageIndexRef.current
-    const closedOnImageIndex = lightboxCurrentIndexRef.current
-    if (openedAt !== null) {
-      const durationSeconds = Math.round((Date.now() - openedAt) / 1000)
-      window.visitors?.track("Lightbox View", {
-        project: projectName ?? "Unknown",
-        durationSeconds,
-        openedImageIndex: openedImageIndex ?? 0,
-        openedImageNumber: (openedImageIndex ?? 0) + 1,
-        closedOnImageIndex,
-        closedOnImageNumber: closedOnImageIndex + 1,
-      })
-      lightboxOpenedAtRef.current = null
-      lightboxOpenedImageIndexRef.current = null
-    }
     setLightboxOpen(false)
-  }, [projectName])
+  }, [])
   const handleLightboxNavigate = useCallback((index: number) => setLightboxIndex(index), [])
-
-  // Keep ref in sync so close handler has current index (avoids stale closure)
-  useEffect(() => {
-    lightboxCurrentIndexRef.current = lightboxIndex
-  }, [lightboxIndex])
 
   const dragConstraints = useMemo(() => width > 0 ? { left: -width, right: 0 } : undefined, [width])
 
@@ -404,13 +250,14 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
     >
       <motion.div
         ref={interactionRef}
+        data-testid="carousel-track"
         className="flex gap-3 xs:gap-6 cursor-grab active:cursor-grabbing w-fit select-none"
         drag="x"
         dragConstraints={dragConstraints}
         dragElastic={ANIMATION.CAROUSEL_DRAG_ELASTIC}
         dragPropagation={false}
         dragTransition={{ bounceStiffness: ANIMATION.CAROUSEL_DRAG_BOUNCE_STIFFNESS, bounceDamping: ANIMATION.CAROUSEL_DRAG_BOUNCE_DAMPING }}
-        style={{ x, touchAction: "pan-x", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
+        style={{ x, touchAction: "pan-y", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
         whileDrag={{ cursor: "grabbing" }}
         onWheel={handleWheel}
         onMouseEnter={handleMouseEnter}
@@ -422,6 +269,7 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
           {images.map((image, index) => {
           // If image path starts with "/", it's a full path, otherwise use imageFolder
           const imageSrc = image.startsWith("/") ? image : `${imageFolder}/${image}`
+          const preloadImage = preloadFirstImage && index === 0
           return (
             <motion.div
               key={imageSrc}
@@ -438,32 +286,48 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
               }}
               drag={false}
             >
-              <div 
-                className="relative w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] dark:shadow-none select-none"
-                onClick={(e) => handleImageClick(e, index)}
-                onMouseEnter={() => {
-                  // Preload on hover for smoother experience
-                  if (isDesktop) {
-                    const imagePath = imageSrc
-                    preloadLightboxImage(imagePath)
-                  }
-                }}
-                style={{
-                  cursor: isDesktop ? "pointer" : "default",
-                  aspectRatio: IMAGE_ASPECT_RATIO.CAROUSEL,
-                }}
-              >
-                <Image
-                  src={imageSrc}
-                  alt={`Carousel image ${index + 1}`}
-                  fill
-                  className="object-cover select-none"
-                  sizes={`(max-width: ${BREAKPOINTS.MOBILE}px) 90vw, ${BREAKPOINTS.MOBILE}px`}
-                  priority={index === 0}
-                  loading={index === 0 ? "eager" : "lazy"}
-                  draggable={false}
-                />
-              </div>
+              {isDesktop ? (
+                <button
+                  type="button"
+                  data-carousel-image-index={index}
+                  className="relative block w-full overflow-hidden rounded-lg border-[3px] border-border bg-transparent p-0 shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] select-none dark:shadow-none"
+                  onClick={(e) => handleImageClick(e, index)}
+                  onMouseEnter={() => preloadLightboxImage(index)}
+                  onFocus={() => preloadLightboxImage(index)}
+                  aria-label={`Open image ${index + 1} of ${images.length} for ${projectName}`}
+                  style={{ cursor: "pointer", aspectRatio: IMAGE_ASPECT_RATIO.CAROUSEL }}
+                >
+                  <Image
+                    src={imageSrc}
+                    alt=""
+                    fill
+                    className="object-cover select-none"
+                    sizes={`(max-width: ${BREAKPOINTS.MOBILE}px) 90vw, ${BREAKPOINTS.MOBILE}px`}
+                    preload={preloadImage}
+                    fetchPriority={preloadImage ? "high" : undefined}
+                    loading={preloadImage ? undefined : "lazy"}
+                    draggable={false}
+                  />
+                </button>
+              ) : (
+                <div
+                  data-carousel-image-index={index}
+                  className="relative w-full overflow-hidden rounded-lg border-[3px] border-border shadow-[0px_10px_15px_-3px_rgba(0,0,0,0.15),0px_4px_6px_-4px_rgba(0,0,0,0.12)] select-none dark:shadow-none"
+                  style={{ aspectRatio: IMAGE_ASPECT_RATIO.CAROUSEL }}
+                >
+                  <Image
+                    src={imageSrc}
+                    alt={`${projectName}, image ${index + 1} of ${images.length}`}
+                    fill
+                    className="object-cover select-none"
+                    sizes={`(max-width: ${BREAKPOINTS.MOBILE}px) 90vw, ${BREAKPOINTS.MOBILE}px`}
+                    preload={preloadImage}
+                    fetchPriority={preloadImage ? "high" : undefined}
+                    loading={preloadImage ? undefined : "lazy"}
+                    draggable={false}
+                  />
+                </div>
+              )}
             </motion.div>
           )
         })}
@@ -476,6 +340,8 @@ function DraggableCarouselComponent({ images, imageFolder, projectName }: Dragga
         imageFolder={imageFolder}
         currentIndex={lightboxIndex}
         clickedImageRect={clickedImageRect}
+        projectName={projectName}
+        returnFocusRef={lightboxOpenerRef}
         onClose={handleLightboxClose}
         onNavigate={handleLightboxNavigate}
       />

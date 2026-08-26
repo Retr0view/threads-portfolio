@@ -1,9 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  agentRules: false,
   reactStrictMode: true,
   images: {
     // Enable automatic image optimization
     formats: ['image/avif', 'image/webp'],
+    qualities: [75, 95],
     // Quality setting (1-100, default is 75)
     // Higher quality = larger file size
     // Increased sizes to support high-resolution displays (retina, 4K, etc.)
@@ -19,8 +21,6 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
-
-
 
 
 

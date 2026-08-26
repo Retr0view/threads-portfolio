@@ -1,0 +1,12 @@
+[
+  {
+    "id": "alpha",
+    "name": "Alpha",
+    "company": "Example Co",
+    "description": "Fixture project",
+    "logoPath": "/logos/alpha.png",
+    "imageFolder": "/images/Alpha",
+    "images": ["one.jpg"],
+    "fallbackImage": null
+  }
+]

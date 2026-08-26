@@ -116,6 +116,44 @@ html.lenis body {
     display: none;
   }
   
+  /* Intro per-line animation: animate once on first load; on resize re-split but do not replay */
+  .intro-paragraph-lines .line {
+    display: block;
+  }
+
+  .intro-paragraph-lines:not([data-animated="true"]) .line {
+    opacity: 0;
+    transform: translateY(8px);
+    animation: introLineIn 500ms ease forwards;
+    animation-delay: calc(var(--line-index) * 60ms);
+  }
+
+  .intro-paragraph-lines[data-animated="true"] .line {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+
+  .intro-paragraph-lines--second:not([data-animated="true"]) .line,
+  .intro-paragraph-lines--third:not([data-animated="true"]) .line {
+    animation-delay: calc(var(--line-base-delay, 0) + var(--line-index) * 60ms);
+  }
+
+  @keyframes introLineIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .intro-paragraph-lines .line {
+      animation: none;
+      opacity: 1;
+      transform: none;
+    }
+  }
+
   /* Icon that inherits text color via mask-image */
   .icon-current-color {
     background-color: currentColor;
@@ -127,4 +165,3 @@ html.lenis body {
     mask-position: center;
   }
 }
-
