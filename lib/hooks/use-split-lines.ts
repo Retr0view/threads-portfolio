@@ -2,12 +2,11 @@
 
 import { useLayoutEffect } from "react"
 
-const LINE_STAGGER_MS = 60
-const LINE_DURATION_MS = 500
-
 export interface UseSplitLinesOptions {
   /** Delay (ms) before this paragraph's first line animates (e.g. for second paragraph). */
   baseDelayMs?: number
+  /** Runs once after this paragraph's initial visual-line entrance completes. */
+  onInitialAnimationComplete?: () => void
 }
 
 /**
@@ -21,7 +20,7 @@ export function useSplitLines(
   ref: React.RefObject<HTMLParagraphElement | null>,
   options: UseSplitLinesOptions = {}
 ) {
-  const { baseDelayMs = 0 } = options
+  const { baseDelayMs = 0, onInitialAnimationComplete } = options
 
   useLayoutEffect(() => {
     const el = ref.current
@@ -29,9 +28,19 @@ export function useSplitLines(
 
     const original = el.textContent || ""
     const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches
-    let animatedTimeoutId: number | undefined
+    let completed = false
+    let removeCompletionListener: (() => void) | undefined
+
+    const complete = () => {
+      if (completed) return
+      completed = true
+      el.dataset.animated = "true"
+      onInitialAnimationComplete?.()
+    }
 
     const split = () => {
+      removeCompletionListener?.()
+      removeCompletionListener = undefined
       // Reset to plain text before re-splitting (keeps same <p> node, no remount).
       el.textContent = original
 
@@ -70,18 +79,15 @@ export function useSplitLines(
         el.appendChild(line)
       })
 
-      // After first run: either mark animated (reduced motion) or schedule mark after animation.
-      if (!el.dataset.animated) {
-        if (reducedMotion) {
-          el.dataset.animated = "true"
-        } else {
-          if (animatedTimeoutId) window.clearTimeout(animatedTimeoutId)
-          const delayMs = baseDelayMs + (lines.length - 1) * LINE_STAGGER_MS + LINE_DURATION_MS
-          animatedTimeoutId = window.setTimeout(() => {
-            el.dataset.animated = "true"
-            animatedTimeoutId = undefined
-          }, delayMs)
+      if (!completed && reducedMotion) {
+        complete()
+      } else if (!completed) {
+        const lastLine = el.querySelector<HTMLElement>(":scope > .line:last-child")
+        const handleAnimationEnd = (event: AnimationEvent) => {
+          if (event.target === lastLine) complete()
         }
+        lastLine?.addEventListener("animationend", handleAnimationEnd)
+        removeCompletionListener = () => lastLine?.removeEventListener("animationend", handleAnimationEnd)
       }
     }
 
@@ -92,10 +98,10 @@ export function useSplitLines(
     document.fonts?.ready.then(split)
 
     return () => {
-      if (animatedTimeoutId) window.clearTimeout(animatedTimeoutId)
+      removeCompletionListener?.()
       ro.disconnect()
       el.textContent = original
       delete el.dataset.animated
     }
-  }, [baseDelayMs, ref])
+  }, [baseDelayMs, onInitialAnimationComplete, ref])
 }

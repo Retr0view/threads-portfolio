@@ -1,116 +1,109 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
-import { MotionValue, animate } from "framer-motion"
 import { useLenis } from "@/components/smooth-scroll"
 import { ANIMATION, EASING } from "@/lib/constants"
+import {
+  animate,
+  useMotionValue,
+  useReducedMotion,
+  type AnimationPlaybackControls,
+} from "framer-motion"
+import { useCallback, useEffect, useRef, useState } from "react"
 
-/**
- * Hook for smooth scroll-to-top animation with overshoot effect
- * Provides a function to scroll to the top of the page with a spring animation
- * 
- * @param scrollY - Motion value for scroll position (used to coordinate with scroll handler)
- * @param mainRef - Ref to the main element (used for padding manipulation)
- * @param isAnimatingRef - Ref to track if animation is in progress (prevents scroll handler updates)
- * 
- * @returns Object containing:
- *   - scrollToTop: Function to trigger scroll-to-top animation
- *   - shouldScaleAvatar: Boolean indicating when avatar should scale (for animation coordination)
- *   - onAvatarAnimationComplete: Callback to reset avatar scale state
- * 
- * @example
- * const scrollY = useMotionValue(0)
- * const mainRef = useRef<HTMLElement>(null)
- * const isAnimatingRef = useRef(false)
- * const { scrollToTop, shouldScaleAvatar, onAvatarAnimationComplete } = useScrollToTop(scrollY, mainRef, isAnimatingRef)
- * 
- * // Trigger scroll
- * scrollToTop()
- * 
- * // Use avatar state for animation coordination
- * <IntroSection 
- *   shouldScaleAvatar={shouldScaleAvatar} 
- *   onAvatarAnimationComplete={onAvatarAnimationComplete} 
- * />
- */
-export function useScrollToTop(
-  scrollY: MotionValue<number>,
-  mainRef: React.RefObject<HTMLElement | null>,
-  isAnimatingRef: React.MutableRefObject<boolean>
-) {
+interface ActiveScrollRun {
+  avatarTriggered: boolean
+  bottomPadding: string
+  controls: AnimationPlaybackControls | null
+  element: HTMLElement
+  finalized: boolean
+  topPadding: string
+}
+
+export function useScrollToTop(mainRef: React.RefObject<HTMLElement | null>) {
   const { lenis } = useLenis()
-  const [shouldScaleAvatar, setShouldScaleAvatar] = useState(false)
+  const shouldReduceMotion = useReducedMotion() ?? false
+  const scrollY = useMotionValue(0)
+  const activeRunRef = useRef<ActiveScrollRun | null>(null)
+  const [avatarPulse, setAvatarPulse] = useState(0)
+
+  const finalize = useCallback(
+    (run: ActiveScrollRun, snapToTop: boolean) => {
+      if (run.finalized) return
+      run.finalized = true
+      run.controls?.stop()
+
+      if (snapToTop) {
+        lenis?.scrollTo(0, { immediate: true })
+        scrollY.set(0)
+      }
+
+      run.element.style.paddingTop = run.topPadding
+      run.element.style.paddingBottom = run.bottomPadding
+      lenis?.resize()
+      if (activeRunRef.current === run) activeRunRef.current = null
+    },
+    [lenis, scrollY]
+  )
 
   const scrollToTop = useCallback(() => {
-    if (lenis && !isAnimatingRef.current && mainRef.current) {
-      isAnimatingRef.current = true
-      const currentScroll = lenis.scroll
-      const overshootAmount = ANIMATION.SCROLL_OVERSHOOT_AMOUNT
-      
-      // Temporarily extend the page at both top and bottom to allow overshoot
-      mainRef.current.style.paddingTop = `${overshootAmount}px`
-      mainRef.current.style.paddingBottom = `${overshootAmount}px`
-      // Force Lenis to recalculate scroll limits
-      lenis.resize()
-      
-      // Adjust scroll position to account for the top padding
-      const adjustedScroll = currentScroll + overshootAmount
-      lenis.scrollTo(adjustedScroll, { immediate: true })
-      scrollY.set(adjustedScroll)
-      
-      // First, animate to overshoot position (go down) - fast ease-out
-      animate(scrollY, adjustedScroll + overshootAmount, {
-        duration: ANIMATION.SCROLL_OVERSHOOT_DURATION,
-        ease: EASING.EASE_OUT_CUBIC,
-        onUpdate: (latest) => {
-          lenis.scrollTo(latest, { immediate: true })
-        },
-      }).then(() => {
-        // Then spring to top (accounting for top padding) - less bouncy spring
-        // Estimate spring duration and start avatar animation before it ends
-        const estimatedSpringDuration = ANIMATION.SCROLL_SPRING_DURATION
-        const avatarStartDelay = estimatedSpringDuration - ANIMATION.SCROLL_AVATAR_START_DELAY_OFFSET
-        const avatarTimeout = setTimeout(() => {
-          setShouldScaleAvatar(true)
-        }, avatarStartDelay * 1000)
-        
-        animate(scrollY, overshootAmount, {
+    const main = mainRef.current
+    if (!lenis || !main || activeRunRef.current) return
+
+    if (shouldReduceMotion) {
+      lenis.scrollTo(0, { immediate: true })
+      scrollY.set(0)
+      return
+    }
+
+    const run: ActiveScrollRun = {
+      avatarTriggered: false,
+      bottomPadding: main.style.paddingBottom,
+      controls: null,
+      element: main,
+      finalized: false,
+      topPadding: main.style.paddingTop,
+    }
+    activeRunRef.current = run
+
+    const overshoot = ANIMATION.SCROLL_OVERSHOOT_AMOUNT
+    main.style.paddingTop = `${overshoot}px`
+    main.style.paddingBottom = `${overshoot}px`
+    lenis.resize()
+
+    const adjustedScroll = lenis.scroll + overshoot
+    lenis.scrollTo(adjustedScroll, { immediate: true })
+    scrollY.set(adjustedScroll)
+
+    run.controls = animate(scrollY, adjustedScroll + overshoot, {
+      duration: ANIMATION.SCROLL_OVERSHOOT_DURATION,
+      ease: EASING.EASE_OUT_CUBIC,
+      onUpdate: (latest) => lenis.scrollTo(latest, { immediate: true }),
+      onComplete: () => {
+        if (run.finalized || activeRunRef.current !== run) return
+        run.controls = animate(scrollY, overshoot, {
           type: "spring",
           stiffness: ANIMATION.SCROLL_SPRING_STIFFNESS,
           damping: ANIMATION.SCROLL_SPRING_DAMPING,
           onUpdate: (latest) => {
             lenis.scrollTo(latest, { immediate: true })
-          },
-          onComplete: () => {
-            // Clear timeout if spring completed before avatar trigger (shouldn't happen, but safety)
-            clearTimeout(avatarTimeout)
-            // Scroll to actual top (0) without animation
-            lenis.scrollTo(0, { immediate: true })
-            scrollY.set(0)
-            // Remove the extensions
-            if (mainRef.current) {
-              mainRef.current.style.paddingTop = ""
-              mainRef.current.style.paddingBottom = ""
-              lenis.resize()
+            if (!run.avatarTriggered && latest <= overshoot + 16) {
+              run.avatarTriggered = true
+              setAvatarPulse((pulse) => pulse + 1)
             }
-            // Re-enable scroll listener updates
-            isAnimatingRef.current = false
           },
+          onComplete: () => finalize(run, true),
         })
-      })
-    }
-  }, [lenis, scrollY])
+      },
+    })
+  }, [finalize, lenis, mainRef, scrollY, shouldReduceMotion])
 
-  const onAvatarAnimationComplete = useCallback(() => {
-    setShouldScaleAvatar(false)
-  }, [])
+  useEffect(
+    () => () => {
+      const run = activeRunRef.current
+      if (run) finalize(run, false)
+    },
+    [finalize]
+  )
 
-  return {
-    scrollToTop,
-    shouldScaleAvatar,
-    onAvatarAnimationComplete,
-    mainRef,
-    scrollY,
-  }
+  return { avatarPulse, scrollToTop }
 }
-

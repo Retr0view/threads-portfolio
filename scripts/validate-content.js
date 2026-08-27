@@ -1,7 +1,10 @@
-const path = require("path");
-const blurData = require("../lib/image-blur-data.json");
-const { projectManifest } = require("../lib/project-image-manifest");
-const { validateProjectContent } = require("./project-content-validation");
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import blurData from "../lib/image-blur-data.json";
+import { projectManifest } from "../lib/project-image-manifest";
+import { validateProjectContent } from "./project-content-validation";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function main() {
   const result = validateProjectContent({

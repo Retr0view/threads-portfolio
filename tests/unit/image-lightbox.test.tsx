@@ -1,5 +1,5 @@
 import { getLightboxPreloadIndices, ImageLightbox, preloadLightboxImages } from "@/components/image-lightbox"
-import { fireEvent, render, screen, within } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { useRef, useState } from "react"
 import { beforeEach, describe, expect, it, vi } from "vitest"
@@ -13,7 +13,14 @@ vi.mock("react-dom", async () => ({
   preload: resourceHints.preload,
 }))
 
-const images = ["one.jpg", "two.jpg", "three.jpg"]
+const galleryImages = (names: string[]) =>
+  names.map((name, index) => ({
+    id: `image-${index + 1}`,
+    src: `/images/project/${name}`,
+    blurDataURL: null,
+  }))
+
+const images = galleryImages(["one.jpg", "two.jpg", "three.jpg"])
 
 function StatefulLightbox() {
   const [isOpen, setIsOpen] = useState(true)
@@ -27,7 +34,6 @@ function StatefulLightbox() {
       <ImageLightbox
         isOpen={isOpen}
         images={images}
-        imageFolder="/images/project"
         currentIndex={currentIndex}
         clickedImageRect={null}
         projectName="Project Alpha"
@@ -39,7 +45,7 @@ function StatefulLightbox() {
   )
 }
 
-function ToggleLightbox({ collection = images }: { collection?: string[] }) {
+function ToggleLightbox({ collection = images }: { collection?: ReturnType<typeof galleryImages> }) {
   const [isOpen, setIsOpen] = useState(false)
   const openerRef = useRef<HTMLButtonElement>(null)
   return (
@@ -51,7 +57,6 @@ function ToggleLightbox({ collection = images }: { collection?: string[] }) {
       <ImageLightbox
         isOpen={isOpen}
         images={collection}
-        imageFolder="/images/project"
         currentIndex={0}
         clickedImageRect={null}
         projectName="Project Alpha"
@@ -70,10 +75,10 @@ describe("ImageLightbox", () => {
   })
 
   it.each([
-    { images: [] as string[], currentIndex: 0, expectedIndices: [] },
-    { images: ["one.jpg"], currentIndex: 0, expectedIndices: [0] },
+    { images: galleryImages([]), currentIndex: 0, expectedIndices: [] },
+    { images: galleryImages(["one.jpg"]), currentIndex: 0, expectedIndices: [0] },
     {
-      images: ["one.jpg", "two.jpg"],
+      images: galleryImages(["one.jpg", "two.jpg"]),
       currentIndex: 1,
       expectedIndices: [1, 0],
     },
@@ -83,12 +88,12 @@ describe("ImageLightbox", () => {
     ({ images: collection, currentIndex, expectedIndices }) => {
       expect(getLightboxPreloadIndices(collection.length, currentIndex)).toEqual(expectedIndices)
 
-      preloadLightboxImages(collection, "/images/project", currentIndex)
+      preloadLightboxImages(collection, currentIndex)
 
       expect(resourceHints.preload).toHaveBeenCalledTimes(expectedIndices.length)
       expect(resourceHints.preload.mock.calls.map(([requestUrl]) => requestUrl)).toEqual(
         expectedIndices.map(
-          (index) => `/_next/image?url=${encodeURIComponent(`/images/project/${collection[index]}`)}&w=1200&q=95`
+          (index) => `/_next/image?url=${encodeURIComponent(collection[index]!.src)}&w=1200&q=95`
         )
       )
       resourceHints.preload.mock.calls.forEach(([, options]) => {
@@ -105,19 +110,20 @@ describe("ImageLightbox", () => {
     render(<StatefulLightbox />)
     expect(screen.getByAltText("Project Alpha, image 1 of 3")).toBeInTheDocument()
 
-    expect(fireEvent.keyDown(window, { key: "ArrowLeft" })).toBe(false)
+    const dialog = screen.getByRole("dialog")
+    expect(fireEvent.keyDown(dialog, { key: "ArrowLeft" })).toBe(false)
     expect(screen.getByAltText("Project Alpha, image 3 of 3")).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: "ArrowRight" })
+    fireEvent.keyDown(dialog, { key: "ArrowRight" })
     expect(screen.getByAltText("Project Alpha, image 1 of 3")).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: "End" })
+    fireEvent.keyDown(dialog, { key: "End" })
     expect(screen.getByAltText("Project Alpha, image 3 of 3")).toBeInTheDocument()
 
-    fireEvent.keyDown(window, { key: "Home" })
+    fireEvent.keyDown(dialog, { key: "Home" })
     expect(screen.getByAltText("Project Alpha, image 1 of 3")).toBeInTheDocument()
 
-    expect(fireEvent.keyDown(window, { key: "ArrowRight", altKey: true })).toBe(true)
+    expect(fireEvent.keyDown(dialog, { key: "ArrowRight", altKey: true })).toBe(true)
     expect(screen.getByAltText("Project Alpha, image 1 of 3")).toBeInTheDocument()
   })
 
@@ -189,7 +195,7 @@ describe("ImageLightbox", () => {
 
   it("keeps a one-image dialog on its only close control", async () => {
     const user = userEvent.setup()
-    render(<ToggleLightbox collection={["one.jpg"]} />)
+    render(<ToggleLightbox collection={galleryImages(["one.jpg"])} />)
     await user.click(screen.getByRole("button", { name: "Open viewer" }))
     const close = screen.getByRole("button", { name: "Close image viewer" })
 
@@ -210,9 +216,8 @@ describe("ImageLightbox", () => {
     expect(document.body.style.overflow).toBe("hidden")
     expect(screen.getByRole("button", { name: "Close image viewer" })).toHaveFocus()
 
-    fireEvent.keyDown(window, { key: "Escape" })
-
-    expect(screen.queryByTestId("image-lightbox")).not.toBeInTheDocument()
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
+    await waitFor(() => expect(screen.queryByTestId("image-lightbox")).not.toBeInTheDocument())
     expect(document.body.style.overflow).toBe("clip")
     expect(opener).toHaveFocus()
   })
@@ -223,7 +228,6 @@ describe("ImageLightbox", () => {
       <ImageLightbox
         isOpen
         images={images}
-        imageFolder="/images/project"
         currentIndex={0}
         clickedImageRect={null}
         projectName="Project Alpha"
@@ -267,7 +271,7 @@ describe("ImageLightbox", () => {
   it("recovers after a navigated failure and starts fresh when revisiting it", () => {
     render(<StatefulLightbox />)
 
-    fireEvent.keyDown(window, { key: "ArrowRight" })
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" })
     fireEvent.error(screen.getByAltText("Project Alpha, image 2 of 3"))
     expect(screen.getByTestId("lightbox-image-frame")).toHaveAttribute("data-image-state", "error")
     expect(screen.getByText("Could not load image 2 of 3 for Project Alpha.")).toBeVisible()
@@ -291,9 +295,9 @@ describe("ImageLightbox", () => {
     render(<StatefulLightbox />)
     const firstImage = screen.getByAltText("Project Alpha, image 1 of 3")
 
-    fireEvent.keyDown(window, { key: "ArrowRight" })
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" })
     const secondImage = screen.getByAltText("Project Alpha, image 2 of 3")
-    fireEvent.keyDown(window, { key: "ArrowRight" })
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "ArrowRight" })
     const currentImage = screen.getByAltText("Project Alpha, image 3 of 3")
 
     fireEvent.load(firstImage)
@@ -309,10 +313,12 @@ describe("ImageLightbox", () => {
   })
 
   it("can close while the current image is still loading", () => {
+    vi.useFakeTimers()
     render(<StatefulLightbox />)
     expect(screen.getByTestId("lightbox-image-frame")).toHaveAttribute("data-image-state", "loading")
 
     fireEvent.click(screen.getByRole("button", { name: "Close image viewer" }))
+    act(() => vi.advanceTimersByTime(176))
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Open viewer" })).toHaveFocus()

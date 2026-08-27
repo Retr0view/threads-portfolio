@@ -1,5 +1,5 @@
 import { WorkGroup } from "@/components/work-group"
-import { workGroups } from "@/lib/work-groups"
+import { portfolioProjects } from "@/lib/portfolio-view-model"
 import { render, screen } from "@testing-library/react"
 import { describe, expect, it, vi } from "vitest"
 
@@ -15,7 +15,7 @@ vi.mock("next/image", () => import("../helpers/next-image"))
 
 describe("WorkGroup", () => {
   it("forwards the page-owned first-image preload decision", () => {
-    const workGroup = workGroups[0]
+    const workGroup = portfolioProjects[0]
     expect(workGroup).toBeDefined()
 
     const { rerender } = render(<WorkGroup workGroup={workGroup!} preloadFirstImage />)
@@ -23,8 +23,7 @@ describe("WorkGroup", () => {
     expect(screen.getByTestId("draggable-carousel")).toBeInTheDocument()
     expect(carouselRender).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        imageFolder: workGroup!.imageFolder,
-        images: workGroup!.images,
+        images: workGroup!.gallery,
         preloadFirstImage: true,
         projectName: workGroup!.name,
       })
@@ -34,5 +33,13 @@ describe("WorkGroup", () => {
     expect(carouselRender).toHaveBeenLastCalledWith(
       expect.objectContaining({ preloadFirstImage: false })
     )
+  })
+
+  it("renders validated description parts without injecting HTML", () => {
+    render(<WorkGroup workGroup={portfolioProjects[0]!} preloadFirstImage={false} />)
+
+    const credit = screen.getByRole("link", { name: "Studio Koto" })
+    expect(credit).toHaveAttribute("href", "https://koto.com/")
+    expect(credit).toHaveAttribute("rel", "noopener noreferrer")
   })
 })

@@ -1,11 +1,11 @@
-const fs = require("fs");
-const path = require("path");
-const {
+import fs from "node:fs";
+import path from "node:path";
+import {
   listProjectImageEntries,
   validateProjectManifest,
-} = require("../lib/project-image-manifest");
+} from "../lib/project-image-manifest";
 
-class ProjectContentError extends Error {
+export class ProjectContentError extends Error {
   constructor(issues) {
     super(
       `Project content validation failed:\n${issues.map((issue) => `- ${issue}`).join("\n")}`
@@ -15,7 +15,7 @@ class ProjectContentError extends Error {
   }
 }
 
-function publicPathToFile(publicDir, publicPath) {
+export function publicPathToFile(publicDir, publicPath) {
   const root = path.resolve(publicDir);
   const resolved = path.resolve(root, `.${publicPath}`);
   if (resolved !== root && !resolved.startsWith(`${root}${path.sep}`)) {
@@ -32,7 +32,7 @@ function isFile(filePath) {
   }
 }
 
-function validateProjectAssets({ manifest, publicDir }) {
+export function validateProjectAssets({ manifest, publicDir }) {
   validateProjectManifest(manifest);
   const issues = [];
 
@@ -66,7 +66,7 @@ function validateProjectAssets({ manifest, publicDir }) {
   return manifest;
 }
 
-function uniqueBlurEntries(manifest) {
+export function uniqueBlurEntries(manifest) {
   const entriesByPath = new Map();
   for (const entry of listProjectImageEntries(manifest, {
     includeFallbacks: true,
@@ -78,16 +78,15 @@ function uniqueBlurEntries(manifest) {
   return [...entriesByPath.values()];
 }
 
-function expectedBlurKeys(manifest) {
+export function expectedBlurKeys(manifest) {
   const keys = new Map();
   for (const entry of uniqueBlurEntries(manifest)) {
     keys.set(entry.publicPath, entry);
-    keys.set(entry.publicPath.slice(1), entry);
   }
   return keys;
 }
 
-function validateBlurCoverage({ manifest, blurData }) {
+export function validateBlurCoverage({ manifest, blurData }) {
   validateProjectManifest(manifest);
   const issues = [];
   const expected = expectedBlurKeys(manifest);
@@ -122,7 +121,7 @@ function validateBlurCoverage({ manifest, blurData }) {
   return blurData;
 }
 
-function validateProjectContent({ manifest, publicDir, blurData }) {
+export function validateProjectContent({ manifest, publicDir, blurData }) {
   validateProjectAssets({ manifest, publicDir });
   validateBlurCoverage({ manifest, blurData });
 
@@ -132,13 +131,3 @@ function validateProjectContent({ manifest, publicDir, blurData }) {
     blurKeyCount: Object.keys(blurData).length,
   };
 }
-
-module.exports = {
-  ProjectContentError,
-  expectedBlurKeys,
-  publicPathToFile,
-  uniqueBlurEntries,
-  validateBlurCoverage,
-  validateProjectAssets,
-  validateProjectContent,
-};

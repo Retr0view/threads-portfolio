@@ -1,6 +1,4 @@
 import { SmoothScroll } from "@/components/smooth-scroll"
-import { ThemeInit } from "@/components/theme-init"
-import { ThemeProvider } from "@/components/theme-provider"
 import { siteConfig, socialLinks } from "@/lib/site-config"
 import type { Metadata } from "next"
 import localFont from "next/font/local"
@@ -121,7 +119,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en" className="overflow-x-hidden" suppressHydrationWarning>
+    <html lang="en" className="overflow-x-hidden">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=5" />
         <meta name="theme-color" content="#1c1917" media="(prefers-color-scheme: dark)" />
@@ -191,15 +189,7 @@ export default function RootLayout({
         />
       </head>
       <body className={`${openRunde.className} overflow-x-hidden`}>
-        <ThemeInit />
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <SmoothScroll>{children}</SmoothScroll>
-        </ThemeProvider>
+        <SmoothScroll>{children}</SmoothScroll>
       </body>
     </html>
   )

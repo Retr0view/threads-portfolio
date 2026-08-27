@@ -1,5 +1,5 @@
 import { useSplitLines } from "@/lib/hooks/use-split-lines"
-import { act, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen } from "@testing-library/react"
 import { useRef } from "react"
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest"
 import {
@@ -10,9 +10,9 @@ import {
 
 const originalText = "Alpha beta gamma"
 
-function SplitLinesHarness() {
+function SplitLinesHarness({ onComplete }: { onComplete?: () => void }) {
   const paragraphRef = useRef<HTMLParagraphElement>(null)
-  useSplitLines(paragraphRef)
+  useSplitLines(paragraphRef, { onInitialAnimationComplete: onComplete })
   return <p ref={paragraphRef} data-testid="paragraph">{originalText}</p>
 }
 
@@ -82,18 +82,16 @@ describe("useSplitLines", () => {
     render(<SplitLinesHarness />)
     const paragraph = screen.getByTestId("paragraph")
 
-    act(() => {
-      vi.runAllTimers()
+    fireEvent.animationEnd(paragraph.querySelector(":scope > .line:last-child")!, {
+      animationName: "intro-line-in",
     })
     expect(paragraph).toHaveAttribute("data-animated", "true")
-    expect(vi.getTimerCount()).toBe(0)
 
     firstLineTokenCount = 99
     act(() => ResizeObserverMock.instances[0].trigger())
 
     expect(paragraph.querySelectorAll(":scope > .line")).toHaveLength(1)
     expect(paragraph).toHaveAttribute("data-animated", "true")
-    expect(vi.getTimerCount()).toBe(0)
   })
 
   it("clears its animation timeout and restores plain text on unmount", () => {
@@ -102,24 +100,40 @@ describe("useSplitLines", () => {
     const view = render(<SplitLinesHarness />)
     const paragraph = screen.getByTestId("paragraph")
     const observer = ResizeObserverMock.instances[0]
-    expect(vi.getTimerCount()).toBe(1)
-
     view.unmount()
 
     expect(paragraph.textContent).toBe(originalText)
     expect(paragraph.querySelector(".line")).toBeNull()
     expect(paragraph).not.toHaveAttribute("data-animated")
     expect(observer.disconnect).toHaveBeenCalledOnce()
-    expect(vi.getTimerCount()).toBe(0)
   })
 
   it("marks lines complete immediately when reduced motion is requested", () => {
+    const onComplete = vi.fn()
     installMatchMedia(true)
     installFontsReady(new Promise(() => undefined))
     mockTokenLayout(() => 2)
-    render(<SplitLinesHarness />)
+    render(<SplitLinesHarness onComplete={onComplete} />)
 
     expect(screen.getByTestId("paragraph")).toHaveAttribute("data-animated", "true")
-    expect(vi.getTimerCount()).toBe(0)
+    expect(onComplete).toHaveBeenCalledOnce()
+  })
+
+  it("reports actual final-line completion once and does not replay after resize", () => {
+    const onComplete = vi.fn()
+    installFontsReady(new Promise(() => undefined))
+    mockTokenLayout(() => 2)
+    render(<SplitLinesHarness onComplete={onComplete} />)
+    const paragraph = screen.getByTestId("paragraph")
+
+    fireEvent.animationEnd(paragraph.querySelector(":scope > .line:last-child")!, {
+      animationName: "intro-line-in",
+    })
+    act(() => ResizeObserverMock.instances[0].trigger())
+    fireEvent.animationEnd(paragraph.querySelector(":scope > .line:last-child")!, {
+      animationName: "intro-line-in",
+    })
+
+    expect(onComplete).toHaveBeenCalledOnce()
   })
 })

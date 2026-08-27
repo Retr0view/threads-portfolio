@@ -1,5 +1,5 @@
 import { DraggableCarousel } from "@/components/draggable-carousel"
-import { act, fireEvent, render, screen } from "@testing-library/react"
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 import { installResizeObserverMock } from "../helpers/browser-mocks"
@@ -12,10 +12,13 @@ vi.mock("@/lib/hooks", () => ({
 vi.mock("framer-motion", () => import("../helpers/framer-motion"))
 vi.mock("next/image", () => import("../helpers/next-image"))
 
-const images = ["one.jpg", "two.jpg", "three.jpg"]
+const images = ["one.jpg", "two.jpg", "three.jpg"].map((name, index) => ({
+  id: `image-${index + 1}`,
+  src: `/images/project/${name}`,
+  blurDataURL: null,
+}))
 const carouselProps = {
   images,
-  imageFolder: "/images/project",
   projectName: "Project Alpha",
   preloadFirstImage: false,
 }
@@ -73,8 +76,8 @@ describe("DraggableCarousel", () => {
     controls[1].focus()
     await user.keyboard("{Enter}")
     expect(screen.getByAltText("Project Alpha, image 2 of 3")).toBeInTheDocument()
-    fireEvent.keyDown(window, { key: "Escape" })
-    expect(controls[1]).toHaveFocus()
+    fireEvent.keyDown(screen.getByRole("dialog"), { key: "Escape" })
+    await waitFor(() => expect(controls[1]).toHaveFocus())
 
     controls[2].focus()
     await user.keyboard(" ")
@@ -131,7 +134,6 @@ describe("DraggableCarousel", () => {
     const { container } = render(
       <DraggableCarousel
         images={[]}
-        imageFolder="/images/project"
         projectName="Project Alpha"
         preloadFirstImage={false}
       />

@@ -1,13 +1,16 @@
-const { getPlaiceholder } = require("plaiceholder");
-const fs = require("fs");
-const path = require("path");
-const { projectManifest } = require("../lib/project-image-manifest");
-const {
+import { getPlaiceholder } from "plaiceholder";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { projectManifest } from "../lib/project-image-manifest";
+import {
   publicPathToFile,
   uniqueBlurEntries,
   validateBlurCoverage,
   validateProjectAssets,
-} = require("./project-content-validation");
+} from "./project-content-validation";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function writeFileIfChanged(outputPath, content) {
   const currentContent = fs.existsSync(outputPath)
@@ -37,7 +40,6 @@ async function generateBlurPlaceholders() {
     try {
       const { base64 } = await getPlaiceholder(imagePath, { size: 10 });
       blurDataMap[entry.publicPath] = base64;
-      blurDataMap[entry.publicPath.slice(1)] = base64;
       console.log(`✓ Generated blur for: ${entry.publicPath}`);
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);

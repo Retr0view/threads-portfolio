@@ -4,8 +4,8 @@ import { ANIMATION, EASING } from "@/lib/constants"
 import { useSplitLines } from "@/lib/hooks/use-split-lines"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 import { socialLinks } from "@/lib/site-config"
-import { Image } from "@unpic/react/nextjs"
 import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion"
+import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { TextMorph } from "torph/react"
@@ -19,27 +19,49 @@ const bioText = {
   third: "I care deeply about craft. The small decisions, the edge cases, the moments nobody notices unless they feel wrong. Every detail should make the experience better, then get out of the way.",
 }
 
-// Export for use in page.tsx (work groups start after bio text completes)
-export const BIO_ANIMATION_END = ANIMATION.INTRO_PARAGRAPH_ANIMATION_END_S
-
 // CSS easing string for torph (matches EASE_OUT_CUBIC)
 const TORPH_EASE = "cubic-bezier(0.215, 0.61, 0.355, 1)"
 
-export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: { shouldScaleAvatar?: boolean; onAvatarAnimationComplete?: () => void }) {
+export function IntroSection({
+  avatarPulse = 0,
+  onEntranceComplete,
+}: {
+  avatarPulse?: number
+  onEntranceComplete?: () => void
+}) {
   const [profileError, setProfileError] = useState(false)
+  const [completedParagraphCount, setCompletedParagraphCount] = useState(0)
   const shouldReduceMotion = useReducedMotion()
   const avatarScale = useMotionValue(shouldReduceMotion ? 1 : ANIMATION.AVATAR_INITIAL_SCALE)
-  const hasAnimatedRef = useRef(false)
+  const completedParagraphsRef = useRef(new Set<number>())
+  const lastAvatarPulseRef = useRef(0)
+
+  const markParagraphComplete = useCallback((index: number) => {
+    const completed = completedParagraphsRef.current
+    if (completed.has(index)) return
+    completed.add(index)
+    setCompletedParagraphCount(completed.size)
+    if (completed.size === 3) onEntranceComplete?.()
+  }, [onEntranceComplete])
+
+  const markFirstParagraphComplete = useCallback(() => markParagraphComplete(0), [markParagraphComplete])
+  const markSecondParagraphComplete = useCallback(() => markParagraphComplete(1), [markParagraphComplete])
+  const markThirdParagraphComplete = useCallback(() => markParagraphComplete(2), [markParagraphComplete])
 
   const firstParagraphRef = useRef<HTMLParagraphElement>(null)
   const secondParagraphRef = useRef<HTMLParagraphElement>(null)
   const thirdParagraphRef = useRef<HTMLParagraphElement>(null)
-  useSplitLines(firstParagraphRef, { baseDelayMs: 0 })
+  useSplitLines(firstParagraphRef, {
+    baseDelayMs: 0,
+    onInitialAnimationComplete: markFirstParagraphComplete,
+  })
   useSplitLines(secondParagraphRef, {
     baseDelayMs: ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS,
+    onInitialAnimationComplete: markSecondParagraphComplete,
   })
   useSplitLines(thirdParagraphRef, {
     baseDelayMs: ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS,
+    onInitialAnimationComplete: markThirdParagraphComplete,
   })
 
   // Text morph state – name/date
@@ -59,21 +81,16 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
     }
   }, [shouldReduceMotion, avatarScale])
 
-  // Trigger scale animation when shouldScaleAvatar becomes true
   useEffect(() => {
-    if (shouldScaleAvatar && !shouldReduceMotion && !hasAnimatedRef.current) {
-      hasAnimatedRef.current = true
+    if (avatarPulse <= lastAvatarPulseRef.current) return
+    lastAvatarPulseRef.current = avatarPulse
+    if (!shouldReduceMotion) {
       animate(avatarScale, [1, ANIMATION.AVATAR_BOUNCE_SCALE, 1], {
         duration: ANIMATION.DURATION_LONG,
         ease: EASING.EASE_OUT_CUBIC,
-      }).then(() => {
-        hasAnimatedRef.current = false
-        if (onAvatarAnimationComplete) {
-          onAvatarAnimationComplete()
-        }
       })
     }
-  }, [shouldScaleAvatar, shouldReduceMotion, avatarScale, onAvatarAnimationComplete])
+  }, [avatarPulse, shouldReduceMotion, avatarScale])
 
   const formatDate = useCallback((date: Date) => {
     const day = date.getDate()
@@ -100,8 +117,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
   const displayedNameText = shouldReduceMotion ? "Rian Touag" : nameText
   const displayedDateText = shouldReduceMotion ? updatedDate : dateText
 
-  // Start social links animation after intro paragraph animation completes
-  const socialLinksStartDelay = BIO_ANIMATION_END
+  const entranceComplete = completedParagraphCount === 3
   return (
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
@@ -117,7 +133,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
               width={44}
               height={44}
               className="object-cover w-full h-full"
-              priority
+              preload
               onError={handleProfileError}
             />
           ) : (
@@ -157,7 +173,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
         </p>
         <p
           ref={secondParagraphRef}
-          className="intro-paragraph-lines intro-paragraph-lines--second"
+          className="intro-paragraph-lines intro-paragraph-lines-second"
           style={
             {
               "--line-base-delay": `${ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS}ms`,
@@ -168,7 +184,7 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
         </p>
         <p
           ref={thirdParagraphRef}
-          className="intro-paragraph-lines intro-paragraph-lines--third"
+          className="intro-paragraph-lines intro-paragraph-lines-third"
           style={
             {
               "--line-base-delay": `${ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS}ms`,
@@ -185,11 +201,15 @@ export function IntroSection({ shouldScaleAvatar, onAvatarAnimationComplete }: {
           <motion.div
             key={social.name}
             initial={shouldReduceMotion ? false : { opacity: 0, y: 8 }}
-            animate={shouldReduceMotion ? {} : { opacity: 1, y: 0 }}
+            animate={
+              shouldReduceMotion || entranceComplete
+                ? { opacity: 1, y: 0 }
+                : { opacity: 0, y: 8 }
+            }
             whileTap={{ scale: ANIMATION.SOCIAL_LINK_TAP_SCALE }}
             transition={{
-              opacity: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: socialLinksStartDelay + index * ANIMATION.SOCIAL_LINK_STAGGER, ease: EASING.EASE_OUT_CUBIC },
-              y: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: socialLinksStartDelay + index * ANIMATION.SOCIAL_LINK_STAGGER, ease: EASING.EASE_OUT_CUBIC },
+              opacity: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: entranceComplete ? index * ANIMATION.SOCIAL_LINK_STAGGER : 0, ease: EASING.EASE_OUT_CUBIC },
+              y: { duration: ANIMATION.SOCIAL_LINK_DURATION, delay: entranceComplete ? index * ANIMATION.SOCIAL_LINK_STAGGER : 0, ease: EASING.EASE_OUT_CUBIC },
               scale: { type: "spring", stiffness: ANIMATION.AVATAR_SCALE_ANIMATION_STIFFNESS, damping: 17 },
             }}
           >

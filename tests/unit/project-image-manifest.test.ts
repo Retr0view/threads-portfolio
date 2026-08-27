@@ -96,7 +96,7 @@ describe("project content validation", () => {
         publicDir: path.resolve(process.cwd(), "public"),
         blurData: productionBlurData,
       })
-    ).toEqual({ projectCount: 4, imageCount: 11, blurKeyCount: 22 });
+    ).toEqual({ projectCount: 4, imageCount: 11, blurKeyCount: 11 });
   });
 
   it("proves parity with the expected ordered 11 image paths", () => {
@@ -139,7 +139,6 @@ describe("project content validation", () => {
     manifest[0].fallbackImage = "/images/Alpha/fallback.jpg";
     const blurData = {
       "/images/Alpha/fallback.jpg": "data:image/jpeg;base64,fixture",
-      "images/Alpha/fallback.jpg": "data:image/jpeg;base64,fixture",
     };
 
     expect(
@@ -148,7 +147,7 @@ describe("project content validation", () => {
         publicDir: fixturePublicDir,
         blurData,
       })
-    ).toEqual({ projectCount: 1, imageCount: 1, blurKeyCount: 2 });
+    ).toEqual({ projectCount: 1, imageCount: 1, blurKeyCount: 1 });
   });
 
   it("fails when blur coverage is missing or stale", () => {

@@ -6,32 +6,18 @@
 // Breakpoints
 export const BREAKPOINTS = {
   MOBILE: 620,
-  DESKTOP: 1024,
 } as const
 
 // Animation timing constants
 export const ANIMATION = {
   // General durations
-  DURATION_SHORT: 0.2,
-  DURATION_MEDIUM: 0.3,
   DURATION_LONG: 0.4,
-  
-  // Intro section - word animation (legacy / fallback)
-  WORD_STAGGER: 0.02,
-  WORD_DURATION: 0.2,
-  PARAGRAPH_GAP: 0.12,
-  FIRST_PARAGRAPH_START: 0.25,
-  BIO_ANIMATION_END_OFFSET: 0.1,
 
   // Intro section - per-line animation (once on load; resize re-splits, no replay)
-  INTRO_LINE_STAGGER_MS: 60,
-  INTRO_LINE_DURATION_MS: 500,
   /** Delay (ms) before second paragraph's first line animates. */
   INTRO_SECOND_PARA_LINE_BASE_DELAY_MS: 700,
   /** Delay (ms) before third paragraph's first line animates. */
   INTRO_THIRD_PARA_LINE_BASE_DELAY_MS: 1400,
-  /** When intro line animation is considered done for work group/social timing (s). */
-  INTRO_PARAGRAPH_ANIMATION_END_S: 1.4 + 0.5 + 0.3,
   
   // Intro section - letter animation
   LETTER_STAGGER: 0.008,
@@ -50,21 +36,12 @@ export const ANIMATION = {
   CAROUSEL_DRAG_ELASTIC: 0.1,
   CAROUSEL_DRAG_BOUNCE_STIFFNESS: 600,
   CAROUSEL_DRAG_BOUNCE_DAMPING: 30,
-  CAROUSEL_MOBILE_CARD_WIDTH_RATIO: 0.9,
-  
-  // Lightbox
-  LIGHTBOX_BACKDROP_DURATION: 0.2,
-  LIGHTBOX_IMAGE_DURATION_REDUCED: 0.15,
-  LIGHTBOX_IMAGE_DURATION_NORMAL: 0.25,
-  LIGHTBOX_EXIT_DURATION: 0.2,
   
   // Scroll to top
   SCROLL_OVERSHOOT_AMOUNT: 100,
   SCROLL_OVERSHOOT_DURATION: 0.2,
   SCROLL_SPRING_STIFFNESS: 400,
   SCROLL_SPRING_DAMPING: 30,
-  SCROLL_SPRING_DURATION: 0.4,
-  SCROLL_AVATAR_START_DELAY_OFFSET: 0.05,
   
   // Social links
   SOCIAL_LINK_STAGGER: 0.1,

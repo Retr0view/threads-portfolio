@@ -3,7 +3,7 @@
     "id": "alpha",
     "name": "Alpha",
     "company": "Example Co",
-    "description": "Fixture project",
+    "description": [{ "type": "text", "text": "Fixture project" }],
     "logoPath": "/logos/alpha.png",
     "imageFolder": "/images/Alpha",
     "images": ["one.jpg"],

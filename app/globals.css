@@ -24,6 +24,76 @@ html.lenis body {
   pointer-events: none;
 }
 
+.lightbox-dialog::backdrop {
+  animation: lightbox-backdrop-in 220ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+  backdrop-filter: blur(12px);
+  background: rgb(255 255 255 / 60%);
+}
+
+.lightbox-dialog[data-state="open"] .lightbox-panel {
+  animation: lightbox-panel-in 220ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+
+.lightbox-dialog[data-state="closing"]::backdrop {
+  animation: lightbox-backdrop-out 176ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+
+.lightbox-dialog[data-state="closing"] .lightbox-panel {
+  animation: lightbox-panel-out 176ms cubic-bezier(0.215, 0.61, 0.355, 1) both;
+}
+
+@media (prefers-color-scheme: dark) {
+  .lightbox-dialog::backdrop {
+    background: rgb(0 0 0 / 60%);
+  }
+}
+
+@media (hover: hover) and (pointer: fine) and (768px <= width) {
+  .lightbox-nav {
+    opacity: 0;
+    transition: opacity 200ms ease-out, transform 200ms ease-out;
+  }
+
+  .lightbox-panel:hover .lightbox-nav,
+  .lightbox-panel:focus-within .lightbox-nav {
+    opacity: 1;
+  }
+}
+
+@keyframes lightbox-backdrop-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes lightbox-backdrop-out {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
+@keyframes lightbox-panel-in {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes lightbox-panel-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  to {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+}
+
 @layer base {
   :root {
     /* Stone theme - Light mode with warm tones */
@@ -50,44 +120,45 @@ html.lenis body {
   }
 }
 
-/* Dark mode - outside @layer for higher cascade priority
- * This is intentionally outside @layer base to ensure dark mode styles
- * have higher specificity and override light mode variables correctly
- */
-:root.dark {
-  --background: 20 14.3% 4.1%;
-  --foreground: 60 9.1% 97.8%;
-  --card: 20 14.3% 4.1%;
-  --card-foreground: 60 9.1% 97.8%;
-  --popover: 20 14.3% 4.1%;
-  --popover-foreground: 60 9.1% 97.8%;
-  --primary: 60 9.1% 97.8%;
-  --primary-foreground: 20 14.3% 4.1%;
-  --secondary: 12 6.5% 15.1%;
-  --secondary-foreground: 60 9.1% 97.8%;
-  --muted: 12 6.5% 15.1%;
-  --muted-foreground: 24 5.4% 63.9%;
-  --accent: 12 6.5% 15.1%;
-  --accent-foreground: 60 9.1% 97.8%;
-  --destructive: 0 62.8% 30.6%;
-  --destructive-foreground: 0 0% 98%;
-  --border: 12 6.5% 10.1%;
-  --input: 12 6.5% 15.1%;
-  --ring: 24 5.4% 63.9%;
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: 20 14.3% 4.1%;
+    --foreground: 60 9.1% 97.8%;
+    --card: 20 14.3% 4.1%;
+    --card-foreground: 60 9.1% 97.8%;
+    --popover: 20 14.3% 4.1%;
+    --popover-foreground: 60 9.1% 97.8%;
+    --primary: 60 9.1% 97.8%;
+    --primary-foreground: 20 14.3% 4.1%;
+    --secondary: 12 6.5% 15.1%;
+    --secondary-foreground: 60 9.1% 97.8%;
+    --muted: 12 6.5% 15.1%;
+    --muted-foreground: 24 5.4% 63.9%;
+    --accent: 12 6.5% 15.1%;
+    --accent-foreground: 60 9.1% 97.8%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 12 6.5% 10.1%;
+    --input: 12 6.5% 15.1%;
+    --ring: 24 5.4% 63.9%;
+  }
 }
 
 @layer base {
   html {
     box-sizing: border-box;
+    font-synthesis: none;
   }
+
   * {
     @apply border-border;
   }
+
   body {
     @apply bg-background text-foreground;
+
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-    font-smooth: always;
   }
   
   /* Focus indicators for accessibility */
@@ -112,6 +183,7 @@ html.lenis body {
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
@@ -122,10 +194,10 @@ html.lenis body {
   }
 
   .intro-paragraph-lines:not([data-animated="true"]) .line {
+    animation: intro-line-in 500ms ease forwards;
+    animation-delay: calc(var(--line-index) * 60ms);
     opacity: 0;
     transform: translateY(8px);
-    animation: introLineIn 500ms ease forwards;
-    animation-delay: calc(var(--line-index) * 60ms);
   }
 
   .intro-paragraph-lines[data-animated="true"] .line {
@@ -134,12 +206,12 @@ html.lenis body {
     transform: none;
   }
 
-  .intro-paragraph-lines--second:not([data-animated="true"]) .line,
-  .intro-paragraph-lines--third:not([data-animated="true"]) .line {
+  .intro-paragraph-lines-second:not([data-animated="true"]) .line,
+  .intro-paragraph-lines-third:not([data-animated="true"]) .line {
     animation-delay: calc(var(--line-base-delay, 0) + var(--line-index) * 60ms);
   }
 
-  @keyframes introLineIn {
+  @keyframes intro-line-in {
     to {
       opacity: 1;
       transform: translateY(0);
@@ -152,16 +224,20 @@ html.lenis body {
       opacity: 1;
       transform: none;
     }
+
+    .lightbox-dialog::backdrop,
+    .lightbox-dialog .lightbox-panel,
+    .lightbox-nav {
+      animation: none;
+      transition: none;
+    }
   }
 
   /* Icon that inherits text color via mask-image */
   .icon-current-color {
-    background-color: currentColor;
-    -webkit-mask-size: contain;
-    mask-size: contain;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-    -webkit-mask-position: center;
+    background-color: currentcolor;
     mask-position: center;
+    mask-repeat: no-repeat;
+    mask-size: contain;
   }
 }

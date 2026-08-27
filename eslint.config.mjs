@@ -21,12 +21,6 @@ const eslintConfig = defineConfig([
     },
   },
   {
-    files: ["lib/hooks.ts"],
-    rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-    },
-  },
-  {
     files: ["**/*.{ts,tsx}"],
     rules: {
       "react-hooks/preserve-manual-memoization": "off",

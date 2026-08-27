@@ -1,75 +1,44 @@
 # Loading animation behavior
 
-This document explains the current intro sequence and where each part is owned. It describes stable symbols and lifecycle rules rather than source line positions.
+The intro sequence is completion-driven. Browser layout decides how many biography lines exist; downstream content does not predict that duration.
 
-## Sequence
+## Sequence and ownership
 
-`IntroSection` renders the profile header, three biography paragraphs, and social links. `Home` renders the work groups, dividers, and back-to-top control after the biography sequence.
+`IntroSection` owns the profile header, three semantic biography paragraphs, social links, and the one-shot completion signal. `Home` owns project/divider reveal and the back-to-top control.
 
-The visible sequence is:
+1. The avatar enters with its spring scale; name and tracked content date are supplied to `TextMorph` after their short local delays.
+2. `useSplitLines` measures each paragraph into visual lines after layout. The second and third paragraphs keep their existing base offsets.
+3. The last line in each paragraph reports its real `animationend`. Once all three have reported, `IntroSection` calls `onEntranceComplete` exactly once.
+4. Social links and projects start their local stagger from that state change. Dividers remain relative to their project; the back-to-top control remains relative to the project count.
 
-1. The profile avatar enters with its initial spring scale.
-2. The name and tracked content date are supplied to `TextMorph` after `ANIMATION.NAME_DELAY` and `ANIMATION.DATE_DELAY`.
-3. The first biography paragraph begins its measured-line entrance.
-4. The second and third paragraphs begin at `ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS` and `ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS`.
-5. Social links begin from `BIO_ANIMATION_END`, with `ANIMATION.SOCIAL_LINK_STAGGER` between links.
-6. Work groups begin from the same completion boundary, with `ANIMATION.WORK_GROUP_STAGGER` between groups. Each divider waits for its work group to finish plus `ANIMATION.DIVIDER_DELAY_AFTER_WORK_GROUP`.
-7. The back-to-top control uses its own delay derived from the same biography boundary and the work-group count.
+There is no exported biography-end duration and no hook timeout. CSS owns visual line duration/stagger; React observes completion.
 
-`BIO_ANIMATION_END` is exported by `components/intro-section.tsx` as the page-level alias of `ANIMATION.INTRO_PARAGRAPH_ANIMATION_END_S`. Downstream elements use that boundary instead of recreating the biography completion calculation.
+## Visual-line and typography contract
 
-## Visual-line measurement
+Each paragraph keeps one stable `p` element. The hook temporarily measures token offsets, replaces them with one `.line` span per visual line, and retains `data-animated="true"` after completion. `ResizeObserver` and `document.fonts.ready` re-measure wrapping without replaying a completed entrance.
 
-Each biography paragraph keeps one stable `p` element and passes its ref to `useSplitLines` in `lib/hooks/use-split-lines.ts`.
-
-On the first layout pass, the hook:
-
-1. Reads the paragraph's plain text.
-2. Temporarily wraps tokens so their vertical offsets can be measured.
-3. Groups tokens that share a vertical offset into one visual line.
-4. Replaces the temporary tokens with one `.line` span per measured line.
-5. Assigns `--line-index` so CSS can stagger the entrance.
-6. Sets `data-animated="true"` after the final line finishes.
-
-The CSS in `app/globals.css` starts each unfinished line below its final position at zero opacity, then animates it upward into the visible final state. Paragraph base offsets come from `ANIMATION` and are passed through `--line-base-delay`.
-
-`ResizeObserver` and `document.fonts.ready` both call the measurement again. Once `data-animated` is set, replacement lines render in their final state, so a font change or viewport resize does not replay the entrance. Cleanup disconnects the observer, clears a pending completion timer, restores plain text, and removes the marker.
-
-The visual line duration and stagger must remain synchronized between the hook's completion calculation and the CSS animation. The paragraph base offsets and the downstream completion boundary live in `lib/constants.ts`. When timing changes, verify these implementation points together:
-
-- `ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS`
-- `ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS`
-- `ANIMATION.INTRO_PARAGRAPH_ANIMATION_END_S`
-- the local line timing in `lib/hooks/use-split-lines.ts`
-- the `.intro-paragraph-lines` rules in `app/globals.css`
-
-Do not infer that a constant is active from its name alone. Trace its imports before changing it.
+The typography is deliberately stable because wrapping is behavior here: OpenRunde WOFF2 at weights 400–700, the existing text measure, semantic paragraphs, and unitless `1.5` biography leading must remain intact unless the intro is intentionally redesigned.
 
 ## Reduced motion
 
-The sequence has both React and CSS safeguards for `prefers-reduced-motion`:
+With `prefers-reduced-motion: reduce`:
 
-- `IntroSection` shows the full name and date immediately and skips avatar entrance and bounce motion.
-- `useSplitLines` marks measured paragraphs complete immediately.
-- The CSS media query removes line animation and renders full-opacity text at its final transform.
-- `Home` and the carousel omit entrance offsets and animated initial states.
-- The lightbox retains a short fade but removes its scale change and position-derived transform origin.
+- the name/date and all measured lines render complete immediately;
+- the completion signal fires without waiting for animation;
+- avatar, social, project, carousel, lightbox, and scroll motion are omitted;
+- the back-to-top action jumps immediately and does not emit an avatar pulse.
 
-The duplicated safeguards are intentional. Content remains visible if either the JavaScript timing lifecycle or CSS animation path changes.
+Both CSS and React guard visibility so content remains available if either lifecycle changes.
 
-## Scroll-to-top interaction
+## Scroll-to-top lifecycle
 
-`useScrollToTop` coordinates Lenis scrolling and the profile-avatar bounce. The back-to-top link prevents default anchor movement, delegates scrolling to the hook, and uses the hook's state to request the avatar bounce. Reduced-motion users skip the bounce.
+`useScrollToTop` owns the Lenis command, internal motion value, active-run latch, temporary padding, controls, and finalizer. Normal motion preserves the short downward overshoot and spring arrival. The avatar pulse is emitted from observed spring progress near arrival, not an estimated timeout.
 
-This interaction is separate from the initial load sequence even though it reuses constants from `ANIMATION`.
+The same idempotent finalizer restores exact prior inline padding and stops controls on completion or unmount. Re-entry is ignored while a run is active.
 
-## Verification boundaries
+## Verification
 
-Current automated coverage includes:
-
-- `tests/unit/use-split-lines.test.tsx` for visual-line grouping, font readiness, resize without replay, cleanup, and reduced motion.
-- `tests/e2e/interactions.spec.ts` for completed reduced-motion intro content.
-- `npm run check` for TypeScript, ESLint, deterministic generation fixtures, and unit tests.
-- `npm run test:e2e` for the production-browser interaction suite.
-
-When changing sequence timing, test both a normal first load and a reduced-motion load. Resize after the intro completes and confirm that wrapping updates without another entrance.
+- `tests/unit/use-split-lines.test.tsx`: line grouping, font readiness, actual completion, resize/no replay, cleanup, and reduced motion.
+- `tests/unit/use-scroll-to-top.test.tsx`: two-stage success, re-entry, reduced motion, arrival pulse, and unmount restoration.
+- `tests/e2e/interactions.spec.ts`: production-browser intro and back-to-top behavior.
+- `npm run check` and `npm run test:e2e`: full static, unit, and browser gates.

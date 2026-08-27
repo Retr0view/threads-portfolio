@@ -2,23 +2,21 @@
 
 import { ANIMATION, BREAKPOINTS, EASING, IMAGE_ASPECT_RATIO } from "@/lib/constants"
 import { useBreakpoint } from "@/lib/hooks"
+import type { GalleryImage } from "@/lib/portfolio-view-model"
 import { motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { ImageLightbox, preloadLightboxImages } from "./image-lightbox"
 
 interface DraggableCarouselProps {
-  images: string[]
-  imageFolder: string
+  images: readonly GalleryImage[]
   projectName: string
   preloadFirstImage: boolean
 }
 
-function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, projectName }: DraggableCarouselProps) {
+function DraggableCarouselComponent({ images, preloadFirstImage, projectName }: DraggableCarouselProps) {
   const [width, setWidth] = useState(0)
-  const [cardWidth, setCardWidth] = useState(0)
   const isDesktop = useBreakpoint(BREAKPOINTS.MOBILE)
-  const [isHovering, setIsHovering] = useState(false)
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [lightboxIndex, setLightboxIndex] = useState(0)
   const [clickedImageRect, setClickedImageRect] = useState<DOMRect | null>(null)
@@ -30,34 +28,9 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
   const dragStartTime = useRef(0)
   const dragStartX = useRef(0)
   const lightboxOpenerRef = useRef<HTMLButtonElement>(null)
+  const dragResetTimeoutRef = useRef<number | null>(null)
+  const openFrameRef = useRef<number | null>(null)
 
-  // Update card width based on viewport (debounced via useBreakpoint)
-  useEffect(() => {
-    const handleResize = () => {
-      if (wrapperRef.current) {
-        const isMobile = window.innerWidth < BREAKPOINTS.MOBILE
-        const baseWidth = wrapperRef.current.offsetWidth
-        setCardWidth(isMobile ? baseWidth * ANIMATION.CAROUSEL_MOBILE_CARD_WIDTH_RATIO : baseWidth)
-      }
-    }
-
-    handleResize()
-
-    // Debounce resize handler
-    let timeoutId: NodeJS.Timeout
-    const debouncedResize = () => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(handleResize, 150)
-    }
-
-    window.addEventListener("resize", debouncedResize, { passive: true })
-    return () => {
-      window.removeEventListener("resize", debouncedResize)
-      clearTimeout(timeoutId)
-    }
-  }, [])
-
-  // Calculate drag constraints using ResizeObserver to react to actual dimension changes
   useEffect(() => {
     if (!interactionRef.current || !wrapperRef.current) return
 
@@ -67,28 +40,21 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
     const updateWidth = () => {
       const carouselWidth = interaction.scrollWidth
       const wrapperWidth = wrapper.offsetWidth
-      setWidth(Math.max(0, carouselWidth - wrapperWidth))
+      const nextWidth = Math.max(0, carouselWidth - wrapperWidth)
+      setWidth(nextWidth)
+      if (x.get() < -nextWidth) x.set(-nextWidth)
     }
 
     // Use ResizeObserver to recalculate when content dimensions change
     const resizeObserver = new ResizeObserver(updateWidth)
     resizeObserver.observe(interaction)
-
-    // Debounce window resize handler
-    let timeoutId: NodeJS.Timeout
-    const debouncedUpdate = () => {
-      clearTimeout(timeoutId)
-      timeoutId = setTimeout(updateWidth, 150)
-    }
-
-    window.addEventListener("resize", debouncedUpdate, { passive: true })
+    resizeObserver.observe(wrapper)
+    updateWidth()
 
     return () => {
       resizeObserver.disconnect()
-      window.removeEventListener("resize", debouncedUpdate)
-      clearTimeout(timeoutId)
     }
-  }, [images])
+  }, [images, x])
 
   // Prevent browser navigation on horizontal swipe gestures
   useEffect(() => {
@@ -130,14 +96,7 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
     // Prevent browser navigation gestures on wheel events (trackpad)
     // Note: This works alongside the React onWheel handler to catch edge cases
     const handleWheelPrevent = (e: WheelEvent) => {
-      // If hovering over carousel, prevent all horizontal scroll gestures
-      // Otherwise, only prevent if it's clearly horizontal (not vertical scrolling)
-      if (isHovering) {
-        // When hovering, prevent any horizontal scroll to avoid browser navigation
-        if (Math.abs(e.deltaX) > 0) {
-          e.preventDefault()
-        }
-      } else if (Math.abs(e.deltaX) > Math.abs(e.deltaY) && Math.abs(e.deltaX) > 5) {
+      if (Math.abs(e.deltaX) > 0) {
         e.preventDefault()
       }
     }
@@ -155,7 +114,7 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
       interaction.removeEventListener("touchcancel", handleTouchEnd)
       interaction.removeEventListener("wheel", handleWheelPrevent)
     }
-  }, [isHovering])
+  }, [])
 
   // Handle wheel/trackpad scrolling
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -186,20 +145,20 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
     // Only consider it a drag if it lasted > 100ms or moved significantly (> 5px)
     if (dragDuration > 100 || dragDistance > 5) {
       // Reset after a short delay to allow click handler
-      setTimeout(() => {
+      dragResetTimeoutRef.current = window.setTimeout(() => {
         isDragging.current = false
       }, 100)
     } else {
       // Quick tap, reset immediately
-      setTimeout(() => {
+      dragResetTimeoutRef.current = window.setTimeout(() => {
         isDragging.current = false
       }, 50)
     }
   }, [x])
 
   const preloadLightboxImage = useCallback((index: number) => {
-    preloadLightboxImages(images, imageFolder, index)
-  }, [images, imageFolder])
+    preloadLightboxImages(images, index)
+  }, [images])
 
   // Memoize click handler with preloading
   const handleImageClick = useCallback((e: React.MouseEvent<HTMLButtonElement>, index: number) => {
@@ -214,15 +173,16 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
       setLightboxIndex(index)
       
       // Small delay to allow preload to start, then open lightbox
-      requestAnimationFrame(() => {
+      openFrameRef.current = requestAnimationFrame(() => {
         setLightboxOpen(true)
       })
     }
   }, [isDesktop, preloadLightboxImage])
 
-  // Memoize hover handlers
-  const handleMouseEnter = useCallback(() => setIsHovering(true), [])
-  const handleMouseLeave = useCallback(() => setIsHovering(false), [])
+  useEffect(() => () => {
+    if (dragResetTimeoutRef.current !== null) window.clearTimeout(dragResetTimeoutRef.current)
+    if (openFrameRef.current !== null) cancelAnimationFrame(openFrameRef.current)
+  }, [])
 
   // Memoize pointer down handler
   const handlePointerDown = useCallback((e: React.PointerEvent) => {
@@ -246,7 +206,7 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
   return (
     <div
       ref={wrapperRef}
-      className="w-full"
+      className="w-full [container-type:inline-size]"
     >
       <motion.div
         ref={interactionRef}
@@ -260,23 +220,17 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
         style={{ x, touchAction: "pan-y", overscrollBehaviorX: "contain", pointerEvents: "auto", backgroundColor: "transparent" }}
         whileDrag={{ cursor: "grabbing" }}
         onWheel={handleWheel}
-        onMouseEnter={handleMouseEnter}
-        onMouseLeave={handleMouseLeave}
         onDragStart={handleDragStart}
         onDragEnd={handleDragEnd}
         onPointerDown={handlePointerDown}
       >
           {images.map((image, index) => {
-          // If image path starts with "/", it's a full path, otherwise use imageFolder
-          const imageSrc = image.startsWith("/") ? image : `${imageFolder}/${image}`
+          const imageSrc = image.src
           const preloadImage = preloadFirstImage && index === 0
           return (
             <motion.div
               key={imageSrc}
-              className="flex shrink-0 flex-col overflow-visible rounded-none border-0 p-0 h-fit select-none"
-              style={{ 
-                width: cardWidth > 0 ? `${cardWidth}px` : '100%'
-              }}
+              className="flex h-fit w-[90cqw] shrink-0 select-none flex-col overflow-visible rounded-none border-0 p-0 xs:w-[100cqw]"
               initial={prefersReducedMotion ? false : { opacity: 0, y: 8 }}
               animate={{ opacity: 1, y: 0 }}
               transition={prefersReducedMotion ? { duration: 0 } : { 
@@ -337,7 +291,6 @@ function DraggableCarouselComponent({ images, imageFolder, preloadFirstImage, pr
       <ImageLightbox
         isOpen={lightboxOpen}
         images={images}
-        imageFolder={imageFolder}
         currentIndex={lightboxIndex}
         clickedImageRect={clickedImageRect}
         projectName={projectName}

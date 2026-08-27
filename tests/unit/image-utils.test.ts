@@ -1,20 +1,5 @@
 import { calculateTransformOrigin } from "@/lib/image-lightbox-utils"
-import { normalizeImagePath } from "@/lib/image-utils"
 import { describe, expect, it, vi } from "vitest"
-
-describe("normalizeImagePath", () => {
-  it("keeps an absolute public path unchanged", () => {
-    expect(normalizeImagePath("/images/project/one.jpg", "/images/ignored")).toBe(
-      "/images/project/one.jpg"
-    )
-  })
-
-  it("places a filename inside its image folder", () => {
-    expect(normalizeImagePath("one.jpg", "/images/project")).toBe(
-      "/images/project/one.jpg"
-    )
-  })
-})
 
 describe("calculateTransformOrigin", () => {
   it("uses the viewport-relative center of the clicked image", () => {

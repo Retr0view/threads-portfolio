@@ -36,20 +36,20 @@ Run these commands from the repository root.
 
 ```text
 app/
-  layout.tsx                     Root metadata and application providers
+  layout.tsx                     Root metadata, font, and smooth-scroll provider
   page.tsx                       Home-page composition and image-priority choice
   manifest.ts                    Web app manifest route
   robots.ts                      Crawler rules route
   sitemap.ts                     Sitemap route
 components/
   draggable-carousel.tsx         Responsive gallery and lightbox opener
-  image-lightbox.tsx             Modal viewer, image loading, and navigation
-  intro-section.tsx              Profile, biography, and intro timing
+  image-lightbox.tsx             Native dialog, image loading, and navigation
+  intro-section.tsx              Profile, biography, and completion signal
   work-group.tsx                 Project header and gallery boundary
 lib/
   project-image-manifest.json    Project and image content source
-  project-image-manifest.js      Runtime-neutral manifest validation
-  work-groups.ts                 Typed UI projection of the manifest
+  project-image-manifest.ts      Runtime validation and manifest types
+  portfolio-view-model.ts        Canonical React-facing project projection
   image-blur-data.json           Tracked generated blur placeholders
   last-commit-date.json          Tracked content revision
   site-config.ts                 Canonical public identity and social links
@@ -64,7 +64,7 @@ tests/
 
 ## Update portfolio content
 
-`lib/project-image-manifest.json` is the only project and gallery manifest. Each entry owns its project ID, copy, logo path, image folder, ordered image filenames, and optional fallback. `lib/work-groups.ts` derives the UI data from the validated manifest. The blur generator reads the same source.
+`lib/project-image-manifest.json` is the only project and gallery manifest. Each entry owns its project ID, structured text/link description parts, logo path, image folder, ordered image filenames, and optional fallback. `lib/portfolio-view-model.ts` is the only React-facing adapter; it provides complete image paths and canonical blur data. The blur generator reads the same validated source and writes one leading-slash key per image.
 
 When adding, removing, renaming, or replacing a project image:
 
@@ -90,13 +90,13 @@ The date shown as `Updated` is the portfolio content revision, not a build or de
 
 The biography contains three paragraphs. `useSplitLines` measures their browser-wrapped visual lines and animates each paragraph once. Font readiness and resize events trigger a fresh measurement without replaying a completed entrance. Reduced-motion users receive the completed state immediately.
 
-The overall sequence is coordinated through symbols in `lib/constants.ts` and `BIO_ANIMATION_END` in `components/intro-section.tsx`. See [LOADING_ANIMATION_TIMELINE.md](LOADING_ANIMATION_TIMELINE.md) for ownership and sequencing details.
+Each paragraph reports its actual final-line `animationend`. `IntroSection` emits one completion signal after all three paragraphs finish, and `Home` starts social/project stagger sequences from that event instead of a guessed global duration. See [LOADING_ANIMATION_TIMELINE.md](LOADING_ANIMATION_TIMELINE.md) for ownership and sequencing details.
 
 ## Gallery and lightbox
 
 The page chooses one measured portfolio LCP image for initial preload. Other carousel images remain lazy. Desktop hover, focus, open, and lightbox navigation request optimized current and adjacent images without fetching every original on idle.
 
-At the desktop breakpoint, each image is a named button that opens a modal dialog. The dialog traps keyboard focus, restores focus to its exact opener, supports keyboard and pointer navigation, preserves the prior body-overflow value, and keeps controls available after an image failure. On mobile, the carousel remains draggable but its images do not become buttons or open the lightbox.
+At the desktop breakpoint, each image is a named button that opens a native modal dialog. It restores focus to its exact opener, supports keyboard and pointer navigation, preserves the prior body-overflow value, and keeps controls available after an image failure. On mobile, the CSS-sized carousel remains draggable but its images do not become buttons or open the lightbox.
 
 See [IMAGE_LIGHTBOX_DOC.md](IMAGE_LIGHTBOX_DOC.md) for the complete interaction, preload, reduced-motion, and error-state contracts.
 
