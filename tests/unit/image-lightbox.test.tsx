@@ -322,5 +322,21 @@ describe("ImageLightbox", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
     expect(screen.getByRole("button", { name: "Open viewer" })).toHaveFocus()
+    vi.useRealTimers()
+  })
+
+  it("closes from the surface around the image but not from the image-sized panel", () => {
+    vi.useFakeTimers()
+    render(<StatefulLightbox />)
+
+    fireEvent.click(screen.getByTestId("lightbox-panel"))
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-state", "open")
+
+    fireEvent.click(screen.getByTestId("lightbox-dismiss-surface"))
+    expect(screen.getByRole("dialog")).toHaveAttribute("data-state", "closing")
+    act(() => vi.advanceTimersByTime(176))
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    vi.useRealTimers()
   })
 })

@@ -516,7 +516,7 @@ test("the complete lightbox journey is keyboard-only and focus-contained", async
   await expect(opener).toBeFocused()
 })
 
-test("lightbox controls remain inside the 620px desktop breakpoint", async ({ page }) => {
+test("lightbox controls stay attached to the image at the 620px desktop breakpoint", async ({ page }) => {
   await page.setViewportSize({ width: 620, height: 700 })
   await page.goto("/")
   const opener = page.getByRole("button", {
@@ -527,6 +527,18 @@ test("lightbox controls remain inside the 620px desktop breakpoint", async ({ pa
   const dialog = page.getByRole("dialog", {
     name: "Image viewer for Neutron Rebrand",
   })
+  const imageFrame = page.getByTestId("lightbox-image-frame")
+  const frameBox = await imageFrame.boundingBox()
+  const previousBox = await dialog.getByRole("button", { name: "Previous image" }).boundingBox()
+  const nextBox = await dialog.getByRole("button", { name: "Next image" }).boundingBox()
+  const closeBox = await dialog.getByRole("button", { name: "Close image viewer" }).boundingBox()
+  const indicatorsBox = await page.getByTestId("lightbox-indicators").boundingBox()
+
+  expect(frameBox).not.toBeNull()
+  expect(previousBox).not.toBeNull()
+  expect(nextBox).not.toBeNull()
+  expect(closeBox).not.toBeNull()
+  expect(indicatorsBox).not.toBeNull()
 
   for (const controlName of ["Close image viewer", "Previous image", "Next image"]) {
     const box = await dialog.getByRole("button", { name: controlName }).boundingBox()
@@ -536,6 +548,24 @@ test("lightbox controls remain inside the 620px desktop breakpoint", async ({ pa
     expect(box!.y).toBeGreaterThanOrEqual(0)
     expect(box!.y + box!.height).toBeLessThanOrEqual(700)
   }
+
+  expect(previousBox!.x + previousBox!.width).toBeLessThanOrEqual(frameBox!.x)
+  expect(nextBox!.x).toBeGreaterThanOrEqual(frameBox!.x + frameBox!.width)
+  expect(closeBox!.x).toBeGreaterThanOrEqual(frameBox!.x + frameBox!.width)
+  expect(indicatorsBox!.y).toBeGreaterThan(frameBox!.y + frameBox!.height)
+  expect(indicatorsBox!.y - (frameBox!.y + frameBox!.height)).toBeLessThanOrEqual(28)
+
+  const activeIndicator = dialog
+    .getByRole("button", { name: "Go to image 1" })
+    .locator("span")
+  const inactiveIndicator = dialog
+    .getByRole("button", { name: "Go to image 2" })
+    .locator("span")
+  await expect(activeIndicator).toHaveCSS("width", "24px")
+  await expect(inactiveIndicator).toHaveCSS("width", "10px")
+
+  await page.mouse.click(8, 8)
+  await expect(dialog).toHaveCount(0)
 })
 
 test("the open gallery dialog has no relevant automated accessibility violations", async ({ page }) => {

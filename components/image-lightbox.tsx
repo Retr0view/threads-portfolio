@@ -304,88 +304,98 @@ export function ImageLightbox({
       </p>
 
       <div
-        className="lightbox-panel group relative flex h-full items-center justify-center"
-        style={{ transformOrigin }}
-        onClick={(event) => event.stopPropagation()}
+        data-testid="lightbox-dismiss-surface"
+        className="flex h-full items-center justify-center"
+        onClick={(event) => {
+          if (event.target === event.currentTarget) requestClose()
+        }}
       >
-        <button
-          ref={closeButtonRef}
-          type="button"
-          onClick={requestClose}
-          className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-background active:scale-95 md:right-[calc(12.5vw-3.5rem)] md:top-[calc(50%-min(37.5vw,(100vh-92px)*348/392))] motion-reduce:transition-none"
-          aria-label="Close image viewer"
+        <div
+          data-testid="lightbox-panel"
+          className="lightbox-panel group relative w-fit"
+          style={{ transformOrigin }}
+          onClick={(event) => event.stopPropagation()}
         >
-          <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-            <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-        </button>
-
-        <div className="relative flex items-center justify-center overflow-hidden rounded-lg border-[3px] border-border p-0 shadow-2xl">
-          <LightboxImageFrame
-            key={currentImage.src}
-            image={currentImage}
-            imageCount={images.length}
-            imageIndex={currentIndex}
-            projectName={projectName}
-          />
-        </div>
-
-        {canNavigate && (
           <button
+            ref={closeButtonRef}
             type="button"
-            onClick={handlePrevious}
-            className="lightbox-nav absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-background active:scale-95 md:left-[calc(12.5vw-3.5rem)]"
-            aria-label="Previous image"
+            onClick={requestClose}
+            className="absolute right-2 top-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-border bg-background/80 text-foreground backdrop-blur-sm hover:bg-background active:scale-95 xs:-right-14 xs:top-0 motion-reduce:transition-none"
+            aria-label="Close image viewer"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              <path d="M5 5L15 15M15 5L5 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
             </svg>
           </button>
-        )}
 
-        {canNavigate && (
-          <div
-            role="group"
-            aria-label="Choose image"
-            className="absolute bottom-0 left-1/2 flex -translate-x-1/2 items-center gap-1"
-          >
-            {images.map((image, index) => {
-              const activeDot = index === currentIndex
-              return (
-                <button
-                  key={image.id}
-                  type="button"
-                  onClick={() => onNavigate(index)}
-                  className="flex h-8 w-8 items-center justify-center rounded-full"
-                  aria-label={`Go to image ${index + 1}`}
-                  aria-current={activeDot ? "true" : undefined}
-                >
-                  <span
-                    className={`h-2.5 w-2.5 rounded-full border ${
-                      activeDot
-                        ? "scale-x-[2.4] border-foreground bg-foreground"
-                        : "border-border bg-background/70"
-                    }`}
-                    aria-hidden="true"
-                  />
-                </button>
-              )
-            })}
+          <div className="relative flex items-center justify-center overflow-hidden rounded-lg border-[3px] border-border p-0 shadow-2xl">
+            <LightboxImageFrame
+              key={currentImage.src}
+              image={currentImage}
+              imageCount={images.length}
+              imageIndex={currentIndex}
+              projectName={projectName}
+            />
           </div>
-        )}
 
-        {canNavigate && (
-          <button
-            type="button"
-            onClick={handleNext}
-            className="lightbox-nav absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/80 backdrop-blur-sm hover:bg-background active:scale-95 md:right-[calc(12.5vw-3.5rem)]"
-            aria-label="Next image"
-          >
-            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
-              <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </button>
-        )}
+          {canNavigate && (
+            <button
+              type="button"
+              onClick={handlePrevious}
+              className="lightbox-nav absolute left-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/80 text-foreground backdrop-blur-sm hover:bg-background active:scale-95 xs:-left-14"
+              aria-label="Previous image"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M12.5 15L7.5 10L12.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+
+          {canNavigate && (
+            <div
+              data-testid="lightbox-indicators"
+              role="group"
+              aria-label="Choose image"
+              className="absolute left-1/2 top-full mt-4 flex -translate-x-1/2 items-center"
+            >
+              {images.map((image, index) => {
+                const activeDot = index === currentIndex
+                return (
+                  <button
+                    key={image.id}
+                    type="button"
+                    onClick={() => onNavigate(index)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full"
+                    aria-label={`Go to image ${index + 1}`}
+                    aria-current={activeDot ? "true" : undefined}
+                  >
+                    <span
+                      className={`h-2.5 rounded-full border transition-[width,background-color,border-color] duration-200 motion-reduce:transition-none ${
+                        activeDot
+                          ? "w-6 border-foreground bg-foreground"
+                          : "w-2.5 border-border bg-background/70"
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+                )
+              })}
+            </div>
+          )}
+
+          {canNavigate && (
+            <button
+              type="button"
+              onClick={handleNext}
+              className="lightbox-nav absolute right-2 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-background/80 text-foreground backdrop-blur-sm hover:bg-background active:scale-95 xs:-right-14"
+              aria-label="Next image"
+            >
+              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+                <path d="M7.5 15L12.5 10L7.5 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </button>
+          )}
+        </div>
       </div>
     </dialog>
   )
