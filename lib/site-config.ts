@@ -35,6 +35,5 @@ export const siteConfig = {
 export const socialLinks = [
   { name: "Twitter", icon: "/icons/twitter.svg", url: "https://x.com/RianTouag" },
   { name: "Telegram", icon: "/icons/Telegram.svg", url: "https://t.me/Coinlandingpage" },
-  { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-velders-05a5889b/" },
+  { name: "LinkedIn", icon: "/icons/linkedin.svg", url: "https://www.linkedin.com/in/rian-touag-05a5889b/" },
 ] as const
-
