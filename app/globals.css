@@ -188,43 +188,7 @@ html.lenis body {
     display: none;
   }
   
-  /* Intro per-line animation: animate once on first load; on resize re-split but do not replay */
-  .intro-paragraph-lines .line {
-    display: block;
-  }
-
-  .intro-paragraph-lines:not([data-animated="true"]) .line {
-    animation: intro-line-in 500ms ease forwards;
-    animation-delay: calc(var(--line-index) * 60ms);
-    opacity: 0;
-    transform: translateY(8px);
-  }
-
-  .intro-paragraph-lines[data-animated="true"] .line {
-    animation: none;
-    opacity: 1;
-    transform: none;
-  }
-
-  .intro-paragraph-lines-second:not([data-animated="true"]) .line,
-  .intro-paragraph-lines-third:not([data-animated="true"]) .line {
-    animation-delay: calc(var(--line-base-delay, 0) + var(--line-index) * 60ms);
-  }
-
-  @keyframes intro-line-in {
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
   @media (prefers-reduced-motion: reduce) {
-    .intro-paragraph-lines .line {
-      animation: none;
-      opacity: 1;
-      transform: none;
-    }
-
     .lightbox-dialog::backdrop,
     .lightbox-dialog .lightbox-panel,
     .lightbox-nav {

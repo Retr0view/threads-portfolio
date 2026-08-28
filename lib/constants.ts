@@ -13,11 +13,12 @@ export const ANIMATION = {
   // General durations
   DURATION_LONG: 0.4,
 
-  // Intro section - per-line animation (once on load; resize re-splits, no replay)
-  /** Delay (ms) before second paragraph's first line animates. */
-  INTRO_SECOND_PARA_LINE_BASE_DELAY_MS: 700,
-  /** Delay (ms) before third paragraph's first line animates. */
-  INTRO_THIRD_PARA_LINE_BASE_DELAY_MS: 1400,
+  // Intro section - word animation
+  WORD_STAGGER: 0.02,
+  WORD_DURATION: 0.2,
+  PARAGRAPH_GAP: 0.12,
+  FIRST_PARAGRAPH_START: 0.25,
+  BIO_ANIMATION_END_OFFSET: 0.1,
   
   // Intro section - letter animation
   LETTER_STAGGER: 0.008,

@@ -241,15 +241,21 @@ test("gallery intent makes deduplicated optimizer requests without raw originals
   expect(optimizerRequests.map(({ source }) => source).sort()).toEqual(expectedSources.sort())
 })
 
-test("reduced motion renders the split introduction in its completed state", async ({ page }) => {
+test("reduced motion renders the granular introduction in its completed state", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" })
   await page.goto("/")
 
-  const paragraphs = page.locator(".intro-paragraph-lines")
+  const paragraphs = page.getByTestId("intro-biography").locator("p")
   await expect(paragraphs).toHaveCount(3)
-  await expect(paragraphs.first()).toHaveAttribute("data-animated", "true")
-  await expect(paragraphs.nth(1)).toHaveAttribute("data-animated", "true")
-  await expect(paragraphs.nth(2)).toHaveAttribute("data-animated", "true")
+  await expect(paragraphs.first()).toHaveText(
+    "I design in code, working with founders to turn rough ideas into real products."
+  )
+  await expect(paragraphs.nth(1)).toHaveText(
+    "As a senior product designer with an engineer’s eye, I stay close from the first prototype through launch and whatever comes next."
+  )
+  await expect(paragraphs.nth(2)).toHaveText(
+    "To me, craft lives in the details: every interaction, edge case, and small decision. Get them right, and they add up to an experience that simply feels right."
+  )
 
   const opener = page.getByRole("button", {
     name: "Open image 1 of 3 for Neutron Rebrand",

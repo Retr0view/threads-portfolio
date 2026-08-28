@@ -1,26 +1,77 @@
 "use client"
 
 import { ANIMATION, EASING } from "@/lib/constants"
-import { useSplitLines } from "@/lib/hooks/use-split-lines"
+import { createIntroAnimationSchedule } from "@/lib/intro-animation"
 import lastCommitDateData from "@/lib/last-commit-date.json"
 import { socialLinks } from "@/lib/site-config"
 import { animate, motion, useMotionValue, useReducedMotion } from "framer-motion"
 import Image from "next/image"
 import Link from "next/link"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
-import { TextMorph } from "torph/react"
 
 // The tracked date is an explicit portfolio content revision, not a build timestamp.
 const BIO_UPDATED_DATE = new Date(lastCommitDateData.date)
 
-const bioText = {
-  first: "I design in code, working through the details until the product works the way people expect it to.",
-  second: "I’m a senior product designer with an engineer’s eye. I work with founders and startups from the first rough idea through launch and whatever comes next.",
-  third: "I care deeply about craft. The small decisions, the edge cases, the moments nobody notices unless they feel wrong. Every detail should make the experience better, then get out of the way.",
+const bioParagraphs = [
+  "I design in code, working with founders to turn rough ideas into real products.",
+  "As a senior product designer with an engineer’s eye, I stay close from the first prototype through launch and whatever comes next.",
+  "To me, craft lives in the details: every interaction, edge case, and small decision. Get them right, and they add up to an experience that simply feels right.",
+] as const
+
+const introAnimation = createIntroAnimationSchedule(bioParagraphs)
+
+function AnimatedTextByLetter({ text, delay = 0 }: { text: string; delay?: number }) {
+  const shouldReduceMotion = useReducedMotion()
+
+  return text.split("").map((letter, index) => (
+    <motion.span
+      key={`${letter}-${index}`}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        duration: shouldReduceMotion ? 0 : ANIMATION.LETTER_DURATION,
+        delay: shouldReduceMotion ? 0 : delay + index * ANIMATION.LETTER_STAGGER,
+        ease: EASING.EASE_OUT_CUBIC,
+      }}
+      style={{ display: "inline-block" }}
+    >
+      {letter === " " ? "\u00A0" : letter}
+    </motion.span>
+  ))
 }
 
-// CSS easing string for torph (matches EASE_OUT_CUBIC)
-const TORPH_EASE = "cubic-bezier(0.215, 0.61, 0.355, 1)"
+function AnimatedTextByWord({
+  text,
+  delay = 0,
+  onComplete,
+}: {
+  text: string
+  delay?: number
+  onComplete?: () => void
+}) {
+  const shouldReduceMotion = useReducedMotion()
+  const words = text.split(" ")
+
+  return words.map((word, index) => (
+    <motion.span
+      key={`${word}-${index}`}
+      initial={shouldReduceMotion ? false : { opacity: 0, y: 4 }}
+      animate={{ opacity: 1, y: 0 }}
+      onAnimationComplete={
+        !shouldReduceMotion && index === words.length - 1 ? onComplete : undefined
+      }
+      transition={{
+        duration: shouldReduceMotion ? 0 : ANIMATION.WORD_DURATION,
+        delay: shouldReduceMotion ? 0 : delay + index * ANIMATION.WORD_STAGGER,
+        ease: EASING.EASE_OUT_CUBIC,
+      }}
+      style={{ display: "inline-block" }}
+    >
+      {word}
+      {index < words.length - 1 && "\u00A0"}
+    </motion.span>
+  ))
+}
 
 export function IntroSection({
   avatarPulse = 0,
@@ -30,43 +81,27 @@ export function IntroSection({
   onEntranceComplete?: () => void
 }) {
   const [profileError, setProfileError] = useState(false)
-  const [completedParagraphCount, setCompletedParagraphCount] = useState(0)
+  const [entranceComplete, setEntranceComplete] = useState(false)
   const shouldReduceMotion = useReducedMotion()
   const avatarScale = useMotionValue(shouldReduceMotion ? 1 : ANIMATION.AVATAR_INITIAL_SCALE)
-  const completedParagraphsRef = useRef(new Set<number>())
+  const entranceCompleteRef = useRef(false)
+  const entranceTimerRef = useRef<number | undefined>(undefined)
   const lastAvatarPulseRef = useRef(0)
 
-  const markParagraphComplete = useCallback((index: number) => {
-    const completed = completedParagraphsRef.current
-    if (completed.has(index)) return
-    completed.add(index)
-    setCompletedParagraphCount(completed.size)
-    if (completed.size === 3) onEntranceComplete?.()
+  const completeEntrance = useCallback(() => {
+    if (entranceCompleteRef.current) return
+    entranceCompleteRef.current = true
+    setEntranceComplete(true)
+    onEntranceComplete?.()
   }, [onEntranceComplete])
 
-  const markFirstParagraphComplete = useCallback(() => markParagraphComplete(0), [markParagraphComplete])
-  const markSecondParagraphComplete = useCallback(() => markParagraphComplete(1), [markParagraphComplete])
-  const markThirdParagraphComplete = useCallback(() => markParagraphComplete(2), [markParagraphComplete])
-
-  const firstParagraphRef = useRef<HTMLParagraphElement>(null)
-  const secondParagraphRef = useRef<HTMLParagraphElement>(null)
-  const thirdParagraphRef = useRef<HTMLParagraphElement>(null)
-  useSplitLines(firstParagraphRef, {
-    baseDelayMs: 0,
-    onInitialAnimationComplete: markFirstParagraphComplete,
-  })
-  useSplitLines(secondParagraphRef, {
-    baseDelayMs: ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS,
-    onInitialAnimationComplete: markSecondParagraphComplete,
-  })
-  useSplitLines(thirdParagraphRef, {
-    baseDelayMs: ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS,
-    onInitialAnimationComplete: markThirdParagraphComplete,
-  })
-
-  // Text morph state – name/date
-  const [nameText, setNameText] = useState("")
-  const [dateText, setDateText] = useState("")
+  const handleBioAnimationComplete = useCallback(() => {
+    if (entranceCompleteRef.current || entranceTimerRef.current !== undefined) return
+    entranceTimerRef.current = window.setTimeout(
+      completeEntrance,
+      ANIMATION.BIO_ANIMATION_END_OFFSET * 1000
+    )
+  }, [completeEntrance])
 
   const handleProfileError = useCallback(() => setProfileError(true), [])
 
@@ -92,6 +127,15 @@ export function IntroSection({
     }
   }, [avatarPulse, shouldReduceMotion, avatarScale])
 
+  useEffect(() => {
+    if (shouldReduceMotion) completeEntrance()
+    return () => {
+      if (entranceTimerRef.current !== undefined) {
+        window.clearTimeout(entranceTimerRef.current)
+      }
+    }
+  }, [completeEntrance, shouldReduceMotion])
+
   const formatDate = useCallback((date: Date) => {
     const day = date.getDate()
     const month = date.toLocaleDateString("en-US", { month: "short" })
@@ -102,22 +146,6 @@ export function IntroSection({
   // Memoize date formatting
   const updatedDate = useMemo(() => formatDate(BIO_UPDATED_DATE), [formatDate])
 
-  // Staggered text morph (torph): name/date
-  useEffect(() => {
-    if (shouldReduceMotion) {
-      return
-    }
-
-    const timeouts: number[] = []
-    timeouts.push(window.setTimeout(() => setNameText("Rian Touag"), ANIMATION.NAME_DELAY * 1000))
-    timeouts.push(window.setTimeout(() => setDateText(updatedDate), ANIMATION.DATE_DELAY * 1000))
-    return () => timeouts.forEach((id) => window.clearTimeout(id))
-  }, [shouldReduceMotion, updatedDate])
-
-  const displayedNameText = shouldReduceMotion ? "Rian Touag" : nameText
-  const displayedDateText = shouldReduceMotion ? updatedDate : dateText
-
-  const entranceComplete = completedParagraphCount === 3
   return (
     <div className="flex flex-col gap-10 px-3 xs:px-0">
       {/* Profile Header */}
@@ -144,55 +172,32 @@ export function IntroSection({
         </motion.div>
         <div className="flex flex-col gap-1.5">
           <p className="text-base font-medium leading-none tracking-[-0.16px] text-foreground">
-            <TextMorph
-              duration={500}
-              ease={TORPH_EASE}
-              as="span"
-              className="inline"
-            >
-              {displayedNameText || "\u00A0"}
-            </TextMorph>
+            <AnimatedTextByLetter text="Rian Touag" delay={ANIMATION.NAME_DELAY} />
           </p>
           <p className="text-sm font-normal leading-none text-muted-foreground">
-            <TextMorph
-              duration={400}
-              ease={TORPH_EASE}
-              as="span"
-              className="inline"
-            >
-              {displayedDateText || "\u00A0"}
-            </TextMorph>
+            <AnimatedTextByLetter text={updatedDate} delay={ANIMATION.DATE_DELAY} />
           </p>
         </div>
       </div>
 
-      {/* Bio Text – per-line animation once on load; resize re-splits, no replay */}
-      <div className="intro-paragraphs flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground">
-        <p ref={firstParagraphRef} className="intro-paragraph-lines">
-          {bioText.first}
-        </p>
-        <p
-          ref={secondParagraphRef}
-          className="intro-paragraph-lines intro-paragraph-lines-second"
-          style={
-            {
-              "--line-base-delay": `${ANIMATION.INTRO_SECOND_PARA_LINE_BASE_DELAY_MS}ms`,
-            } as React.CSSProperties
-          }
-        >
-          {bioText.second}
-        </p>
-        <p
-          ref={thirdParagraphRef}
-          className="intro-paragraph-lines intro-paragraph-lines-third"
-          style={
-            {
-              "--line-base-delay": `${ANIMATION.INTRO_THIRD_PARA_LINE_BASE_DELAY_MS}ms`,
-            } as React.CSSProperties
-          }
-        >
-          {bioText.third}
-        </p>
+      {/* Bio Text */}
+      <div
+        className="flex flex-col gap-4 leading-[1.5] text-sm text-muted-foreground"
+        data-testid="intro-biography"
+      >
+        {introAnimation.paragraphs.map((paragraph, index) => (
+          <p key={paragraph.text}>
+            <AnimatedTextByWord
+              text={paragraph.text}
+              delay={paragraph.start}
+              onComplete={
+                index === introAnimation.paragraphs.length - 1
+                  ? handleBioAnimationComplete
+                  : undefined
+              }
+            />
+          </p>
+        ))}
       </div>
 
       {/* Social Links */}

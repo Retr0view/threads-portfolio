@@ -88,9 +88,9 @@ The date shown as `Updated` is the portfolio content revision, not a build or de
 
 ## Intro animation
 
-The biography contains three paragraphs. `useSplitLines` measures their browser-wrapped visual lines and animates each paragraph once. Font readiness and resize events trigger a fresh measurement without replaying a completed entrance. Reduced-motion users receive the completed state immediately.
+The biography contains three paragraphs. `createIntroAnimationSchedule` derives each paragraph's start and end from its word count. Words animate every 20ms for 200ms, with a 120ms gap between paragraphs. Reduced-motion users receive the completed state immediately.
 
-Each paragraph reports its actual final-line `animationend`. `IntroSection` emits one completion signal after all three paragraphs finish, and `Home` starts social/project stagger sequences from that event instead of a guessed global duration. See [LOADING_ANIMATION_TIMELINE.md](LOADING_ANIMATION_TIMELINE.md) for ownership and sequencing details.
+The final word starts a 100ms post-biography pause. `IntroSection` then emits one completion signal, and `Home` starts social/project stagger sequences from that event. See [LOADING_ANIMATION_TIMELINE.md](LOADING_ANIMATION_TIMELINE.md) for ownership and sequencing details.
 
 ## Gallery and lightbox
 
